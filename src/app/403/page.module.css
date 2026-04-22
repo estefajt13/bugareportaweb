@@ -1,0 +1,64 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: radial-gradient(circle at top, #fff4e8 0%, #fffdf9 48%, #f8f1e8 100%);
+}
+
+.card {
+  width: min(100%, 620px);
+  border-radius: 28px;
+  background: #ffffff;
+  box-shadow: 0 22px 48px rgba(97, 70, 29, 0.14);
+  padding: 36px 24px;
+  text-align: center;
+}
+
+.code {
+  color: #b25e15;
+  font-size: 3.2rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  margin-bottom: 12px;
+}
+
+.title {
+  color: #61461d;
+  font-size: 1.75rem;
+  margin-bottom: 12px;
+}
+
+.message {
+  color: #5d5d5d;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.primaryButton,
+.secondaryButton {
+  border: none;
+  border-radius: 999px;
+  padding: 12px 22px;
+  font-size: 0.98rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primaryButton {
+  background: #b25e15;
+  color: #ffffff;
+}
+
+.secondaryButton {
+  background: #efe3d5;
+  color: #61461d;
+}
