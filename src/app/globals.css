@@ -1,36 +1,593 @@
+/* ============================================
+   SISTEMA DE DISEÑO - BugaReporta+
+   Mejoras UX implementadas por Sally (BMad)
+   ============================================ */
+
+/* Variables CSS - Sistema de diseño consistente */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Colores Primarios */
+  --primary: #b25e15;
+  --primary-dark: #9a4f10;
+  --primary-light: #c56e1b;
+  --primary-gradient: linear-gradient(135deg, #b25e15 0%, #c56e1b 100%);
+
+  /* Colores de Fondo */
+  --bg-gradient-start: #efe2d3;
+  --bg-gradient-mid: #f8f2ea;
+  --bg-gradient-end: #fffdf9;
+  --bg-card: #ffffff;
+  --bg-card-hover: #fff9f2;
+
+  /* Colores de Texto */
+  --text-primary: #2d1f0e;
+  --text-secondary: #5a4530;
+  --text-muted: #6b5a45;
+  --text-link: #8b4a10;
+
+  /* Bordes y Sombras */
+  --border: #e0c5a4;
+  --border-light: #e5d2bb;
+  --border-focus: #b25e15;
+  --shadow-sm: 0 2px 8px rgba(63, 44, 20, 0.08);
+  --shadow-md: 0 8px 24px rgba(63, 44, 20, 0.12);
+  --shadow-lg: 0 16px 32px rgba(63, 44, 20, 0.14);
+  --shadow-xl: 0 24px 40px rgba(63, 44, 20, 0.18);
+
+  /* Espaciado */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-2xl: 32px;
+  --space-3xl: 48px;
+
+  /* Tipografía */
+  --font-xs: 0.75rem;
+  --font-sm: 0.875rem;
+  --font-base: 1rem;
+  --font-lg: 1.125rem;
+  --font-xl: 1.25rem;
+  --font-2xl: 1.5rem;
+  --font-3xl: 2rem;
+
+  /* Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 22px;
+  --radius-full: 9999px;
+
+  /* Transiciones */
+  --transition-fast: 0.15s ease;
+  --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Reset y base */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 html {
-  height: 100%;
-}
-
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
+  font-size: 16px;
+  scroll-behavior: smooth;
 }
 
 body {
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
-  color: var(--foreground);
-  background: var(--background);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-size: var(--font-base);
+  line-height: 1.6;
+  color: var(--text-primary);
+  background: linear-gradient(180deg, var(--bg-gradient-start) 0%, var(--bg-gradient-mid) 55%, var(--bg-gradient-end) 100%);
+  min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
+/* ============================================
+   ACCESIBILIDAD - Focus States
+   ============================================ */
+
+/* Focus visible para navegación por teclado */
+*:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
 }
 
+/* Focus para elementos interactivos específicos */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(178, 94, 21, 0.2);
+}
+
+/* Remover outline por defecto pero mantener para accesibilidad */
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Skip link para accesibilidad */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--primary);
+  color: white;
+  padding: var(--space-sm) var(--space-lg);
+  z-index: 9999;
+  transition: top var(--transition-fast);
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* ============================================
+   TIPOGRAFÍA
+   ============================================ */
+
+h1 {
+  font-size: var(--font-3xl);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+h2 {
+  font-size: var(--font-2xl);
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+h3 {
+  font-size: var(--font-xl);
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--text-primary);
+}
+
+h4 {
+  font-size: var(--font-lg);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text-primary);
+}
+
+p {
+  margin-bottom: var(--space-md);
+}
+
+/* ============================================
+   ENLACES
+   ============================================ */
+
+/* Enlaces en contenido - sin subrayado por defecto */
 a {
-  color: inherit;
+  color: var(--text-link);
   text-decoration: none;
+  font-weight: 600;
+  transition: all var(--transition-fast);
+}
+
+a:hover {
+  color: var(--primary-dark);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ============================================
+   BOTONES - Estilos base
+   ============================================ */
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+/* Botón primario */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  min-height: 44px;
+  padding: 0 var(--space-xl);
+  border-radius: var(--radius-full);
+  background: var(--primary-gradient);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: var(--font-sm);
+  cursor: pointer;
+  transition: all var(--transition-slow);
+  box-shadow: 0 4px 12px rgba(178, 94, 21, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(178, 94, 21, 0.4);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(178, 94, 21, 0.3);
+}
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: left 0.5s;
+}
+
+.btn-primary:hover::before {
+  left: 100%;
+}
+
+/* Botón secundario */
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  min-height: 44px;
+  padding: 0 var(--space-xl);
+  border-radius: var(--radius-full);
+  border: 2px solid var(--primary);
+  background: #ffffff;
+  color: var(--primary);
+  font-weight: 800;
+  font-size: var(--font-sm);
+  cursor: pointer;
+  transition: all var(--transition-slow);
+}
+
+.btn-secondary:hover {
+  background: #fef6ee;
+  border-color: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(178, 94, 21, 0.2);
+}
+
+.btn-secondary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(178, 94, 21, 0.2);
+}
+
+/* Botón peligro */
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  min-height: 44px;
+  padding: 0 var(--space-xl);
+  border-radius: var(--radius-full);
+  border: 2px solid #c94a3c;
+  background: #ffffff;
+  color: #c94a3c;
+  font-weight: 800;
+  font-size: var(--font-sm);
+  cursor: pointer;
+  transition: all var(--transition-slow);
+}
+
+.btn-danger:hover {
+  background: #fef2f1;
+  border-color: #a83a2d;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(201, 74, 60, 0.2);
+}
+
+/* ============================================
+   FORMULARIOS
+   ============================================ */
+
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: var(--font-base);
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+input[type="tel"],
+input[type="url"],
+select,
+textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--space-lg);
+  border: 2px solid var(--border-light);
+  border-radius: var(--radius-md);
+  background: #ffffff;
+  color: var(--text-primary);
+  transition: all var(--transition-fast);
+}
+
+input:hover,
+select:hover,
+textarea:hover {
+  border-color: #c9b090;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 
+    0 0 0 3px rgba(178, 94, 21, 0.15),
+    0 2px 8px rgba(178, 94, 21, 0.1);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+input:disabled,
+select:disabled,
+textarea:disabled {
+  background: #f5ede3;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Labels de formulario */
+label {
+  display: block;
+  font-size: var(--font-sm);
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-sm);
+}
+
+/* Campos requeridos */
+.required::after {
+  content: ' *';
+  color: #b73228;
+  font-weight: 700;
+}
+
+/* ============================================
+   TARJETAS
+   ============================================ */
+
+.card {
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-xl);
+  transition: all var(--transition-slow);
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-xl);
+}
+
+/* ============================================
+   MENSAJES Y NOTIFICACIONES
+   ============================================ */
+
+.message {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--radius-md);
+  border: 2px solid;
+  font-weight: 700;
+  font-size: var(--font-sm);
+  animation: slideIn 0.3s ease-out;
+}
+
+.message-success {
+  background: linear-gradient(135deg, #f0faf3 0%, #f8fffb 100%);
+  border-color: #d1f0dc;
+  border-left-color: #2d7a41;
+  color: #2b7740;
+}
+
+.message-success::before {
+  content: '✓';
+  font-weight: 900;
+  font-size: 1.1rem;
+}
+
+.message-error {
+  background: linear-gradient(135deg, #fef2f1 0%, #fffbfb 100%);
+  border-color: #f5d5d1;
+  border-left-color: #b73228;
+  color: #b73228;
+}
+
+.message-error::before {
+  content: '⚠';
+  font-size: 1rem;
+}
+
+.message-warning {
+  background: linear-gradient(135deg, #fef9f2 0%, #fffdfb 100%);
+  border-color: #f5e0c8;
+  border-left-color: #b25e15;
+  color: #8b4a10;
+}
+
+.message-warning::before {
+  content: '⚡';
+  font-size: 1rem;
+}
+
+.message-info {
+  background: linear-gradient(135deg, #f0f4f8 0%, #f8fbff 100%);
+  border-color: #c5d5e5;
+  border-left-color: #4a90d9;
+  color: #2c5f99;
+}
+
+.message-info::before {
+  content: 'ℹ';
+  font-size: 1rem;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* ============================================
+   ESTADOS DE CARGA
+   ============================================ */
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f5ede3;
+  border-top: 3px solid var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: var(--space-xl) auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    #f5ede3 25%,
+    #faf3e9 50%,
+    #f5ede3 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-md);
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* ============================================
+   ANIMACIONES
+   ============================================ */
+
+.fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* ============================================
+   UTILIDADES
+   ============================================ */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.font-bold { font-weight: 700; }
+.font-semibold { font-weight: 600; }
+.font-normal { font-weight: 400; }
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+  :root {
+    --font-3xl: 1.75rem;
+    --font-2xl: 1.5rem;
+    --font-xl: 1.25rem;
+  }
+
+  h1 { font-size: var(--font-3xl); }
+  h2 { font-size: var(--font-2xl); }
+  h3 { font-size: var(--font-xl); }
+}
+
+/* ============================================
+   IMPRESIÓN
+   ============================================ */
+
+@media print {
+  body {
+    background: white;
+    color: black;
+  }
+
+  .no-print {
+    display: none !important;
+  }
 }

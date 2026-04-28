@@ -45,8 +45,72 @@
 }
 
 .tagline {
+  margin-top: 8px;
   color: #6e6e6e;
   font-size: 0.85rem;
+}
+
+.resetOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: rgba(20, 16, 11, 0.46);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+.resetCard {
+  width: min(100%, 430px);
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 22px 40px rgba(53, 34, 14, 0.24);
+  padding: 18px;
+  display: grid;
+  gap: 10px;
+}
+
+.resetTitle {
+  color: #61461d;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.resetSubtitle {
+  color: #6f6254;
+  font-size: 0.85rem;
+}
+
+.resetActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.resetCancel,
+.resetSubmit {
+  border: none;
+  border-radius: 999px;
+  padding: 9px 14px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.resetCancel {
+  background: #efefef;
+  color: #5a5a5a;
+}
+
+.resetSubmit {
+  background: #b25e15;
+  color: #ffffff;
+}
+
+.resetCancel:disabled,
+.resetSubmit:disabled {
+  opacity: 0.7;
+  cursor: wait;
 }
 
 .card {

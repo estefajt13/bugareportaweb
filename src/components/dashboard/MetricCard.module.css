@@ -1,0 +1,138 @@
+.card {
+  border-radius: 18px;
+  background: #ffffff;
+  border: 2px solid #e5d2bb;
+  box-shadow: 0 14px 28px rgba(84, 54, 24, 0.12);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 
+    0 20px 40px rgba(84, 54, 24, 0.18),
+    0 0 0 1px rgba(229, 210, 187, 0.3);
+}
+
+.cardPrimary {
+  border-color: #d7a56d;
+  background: linear-gradient(180deg, #fff9f2 0%, #fffdfb 100%);
+  box-shadow: 
+    0 16px 30px rgba(157, 83, 18, 0.16),
+    0 0 0 1px rgba(215, 165, 109, 0.2);
+}
+
+.cardPrimary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #b25e15, #c56e1b, #d7a56d);
+  border-radius: 18px 18px 0 0;
+}
+
+.cardPrimary:hover {
+  box-shadow: 
+    0 24px 40px rgba(157, 83, 18, 0.22),
+    0 0 0 1px rgba(215, 165, 109, 0.3);
+}
+
+.cardSuccess {
+  border-color: #d7a56d;
+  background: linear-gradient(180deg, #fff9f2 0%, #ffffff 100%);
+  box-shadow: 
+    0 16px 30px rgba(157, 83, 18, 0.13),
+    0 0 0 1px rgba(215, 165, 109, 0.2);
+}
+
+.cardSuccess::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #c56e1b, #d7a56d, #e8b87d);
+  border-radius: 18px 18px 0 0;
+}
+
+.cardSuccess:hover {
+  box-shadow: 
+    0 24px 40px rgba(157, 83, 18, 0.18),
+    0 0 0 1px rgba(215, 165, 109, 0.3);
+}
+
+.title {
+  color: #4d3921;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+}
+
+.value {
+  margin-top: 8px;
+  color: #8f4a0f;
+  font-size: 2.2rem;
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.helper {
+  margin-top: 6px;
+  color: #6f675a;
+  font-size: 0.75rem;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.trend {
+  margin-top: 12px;
+  font-size: 1rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1.2;
+}
+
+/* Crecimiento positivo - VERDE */
+.trendUp {
+  color: #2d7a41;
+}
+
+/* Decrecimiento/negativo - ROJO */
+.trendDown {
+  color: #c94a3c;
+}
+
+.trendNeutral {
+  color: #7e7464;
+}
+
+/* Skeleton loading state */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    #f5ede3 25%,
+    #faf3e9 50%,
+    #f5ede3 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 12px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}

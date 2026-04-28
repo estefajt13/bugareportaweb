@@ -25,6 +25,9 @@ export default function LoginPage() {
   const router = useRouter();
   const { isAuthenticated, isLoading, profile } = useAuth();
   const [formData, setFormData] = useState(initialForm);
+  const [resetEmail, setResetEmail] = useState("");
+  const [isResetOpen, setIsResetOpen] = useState(false);
+  const [isResetSubmitting, setIsResetSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -90,12 +93,10 @@ export default function LoginPage() {
     setErrorMessage("");
     setSuccessMessage("");
 
-    const email = formData.email.trim();
+    const email = resetEmail.trim();
 
     if (!email) {
-      setErrorMessage(
-        "Escribe tu correo y luego usa la opción para recuperar la contraseña."
-      );
+      setErrorMessage("Escribe tu correo para recuperar la contraseña.");
       return;
     }
 
@@ -104,15 +105,21 @@ export default function LoginPage() {
       return;
     }
 
+    setIsResetSubmitting(true);
+
     try {
       await requestPasswordReset(email);
       setSuccessMessage(
         "Te enviamos un correo para restablecer tu contraseña."
       );
+      setIsResetOpen(false);
+      setResetEmail("");
     } catch (error) {
       setErrorMessage(
         error.message || "No fue posible enviar el correo de recuperación."
       );
+    } finally {
+      setIsResetSubmitting(false);
     }
   }
 
@@ -139,6 +146,59 @@ export default function LoginPage() {
           />
           <p className={styles.tagline}>Reporta. Mejora. Transforma.</p>
         </div>
+
+        {isResetOpen ? (
+          <div
+            className={styles.resetOverlay}
+            onClick={() => {
+              if (isResetSubmitting) {
+                return;
+              }
+              setIsResetOpen(false);
+              setResetEmail("");
+            }}
+          >
+            <div
+              className={styles.resetCard}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <p className={styles.resetTitle}>Recuperar contraseña</p>
+              <p className={styles.resetSubtitle}>
+                Escribe tu correo y te enviaremos un enlace.
+              </p>
+              <input
+                type="email"
+                placeholder="usuario@correo.com"
+                className={styles.input}
+                value={resetEmail}
+                onChange={(event) => setResetEmail(event.target.value)}
+                disabled={isResetSubmitting}
+              />
+              <div className={styles.resetActions}>
+                <button
+                  type="button"
+                  className={styles.resetCancel}
+                  onClick={() => {
+                    setIsResetOpen(false);
+                    setResetEmail("");
+                    setErrorMessage("");
+                  }}
+                  disabled={isResetSubmitting}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  className={styles.resetSubmit}
+                  onClick={handlePasswordReset}
+                  disabled={isResetSubmitting}
+                >
+                  {isResetSubmitting ? "Enviando..." : "Enviar"}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         <div className={styles.card}>
           <h1 className={styles.title}>Iniciar sesión</h1>
@@ -194,8 +254,13 @@ export default function LoginPage() {
               <button
                 type="button"
                 className={styles.linkButton}
-                onClick={handlePasswordReset}
-                disabled={isSubmitting}
+                onClick={() => {
+                  setErrorMessage("");
+                  setSuccessMessage("");
+                  setResetEmail(formData.email.trim());
+                  setIsResetOpen(true);
+                }}
+                disabled={isSubmitting || isResetSubmitting}
               >
                 ¿Olvidaste tu contraseña?
               </button>

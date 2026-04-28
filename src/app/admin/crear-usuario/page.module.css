@@ -1,0 +1,246 @@
+.page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #efe2d3 0%, #f8f2ea 55%, #fffdf9 100%);
+  padding: 24px 18px;
+}
+
+.card {
+  border-radius: 22px;
+  background: #ffffff;
+  border: 1px solid #e0c5a4;
+  box-shadow: 0 18px 32px rgba(63, 44, 20, 0.13);
+  padding: 22px;
+}
+
+.title {
+  color: #3d2b16;
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+.subtitle {
+  margin-top: 6px;
+  color: #78624b;
+  font-size: 0.9rem;
+}
+
+.form {
+  margin-top: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.row2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  color: #4e3920;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.input {
+  min-height: 42px;
+  border-radius: 12px;
+  border: 1px solid #dfc6a8;
+  background: #ffffff;
+  color: #3b2b19;
+  padding: 0 10px;
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.input:focus {
+  border-color: #b25e15;
+  box-shadow: 0 0 0 3px rgba(178, 94, 21, 0.14);
+}
+
+.fileInput {
+  min-height: 42px;
+  border-radius: 12px;
+  border: 1px dashed #d0b08b;
+  background: #fff9f2;
+  color: #5c4428;
+  padding: 9px 10px;
+  font-size: 0.86rem;
+}
+
+.fileHint {
+  color: #7d6850;
+  font-size: 0.78rem;
+}
+
+.previewBox {
+  width: fit-content;
+  border: 1px solid #ead2b6;
+  border-radius: 14px;
+  background: #fffaf5;
+  padding: 8px;
+  display: grid;
+  gap: 8px;
+}
+
+.previewImage {
+  width: 110px;
+  height: 110px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid #ddc1a1;
+  background: #f6eadb;
+}
+
+.removePhoto {
+  border: none;
+  border-radius: 999px;
+  background: #f1e3d3;
+  color: #845325;
+  min-height: 30px;
+  padding: 0 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.submit {
+  border: none;
+  border-radius: 999px;
+  background: #b25e15;
+  color: #ffffff;
+  min-height: 44px;
+  font-size: 0.92rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.submit:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.error {
+  color: #b73228;
+  font-size: 0.87rem;
+  font-weight: 700;
+}
+
+.success {
+  color: #2b7740;
+  font-size: 0.87rem;
+  font-weight: 700;
+}
+
+/* Sección de foto de perfil */
+.photoSection {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: #fcf5ed;
+  border-radius: 16px;
+  border: 2px dashed #e0c5a4;
+  margin-bottom: 8px;
+}
+
+.photoPreview {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.previewImage {
+  width: 100px;
+  height: 100px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 3px solid #ddc1a1;
+  background: #f6eadb;
+}
+
+.removePhotoBtn {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: #c94a3c;
+  color: #ffffff;
+  border: 2px solid #ffffff;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.removePhotoBtn:hover {
+  background: #a83a2d;
+  transform: scale(1.1);
+}
+
+.placeholderAvatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 999px;
+  background: #f5ede3;
+  border: 3px solid #ddc1a1;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.placeholderImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photoLabel {
+  flex: 1;
+  cursor: pointer;
+}
+
+.photoInput {
+  display: none;
+}
+
+.photoButton {
+  display: inline-block;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #b25e15 0%, #c56e1b 100%);
+  color: #ffffff;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(178, 94, 21, 0.3);
+}
+
+.photoButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(178, 94, 21, 0.4);
+}
+
+.photoHint {
+  color: #8d7251;
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+@media (max-width: 880px) {
+  .row2 {
+    grid-template-columns: 1fr;
+  }
+
+  .photoSection {
+    flex-direction: column;
+    text-align: center;
+  }
+}
