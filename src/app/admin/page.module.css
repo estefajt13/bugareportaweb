@@ -1,20 +1,23 @@
 .page {
   min-height: 100vh;
   position: relative;
-  background: linear-gradient(180deg, #efe2d3 0%, #f8f2ea 55%, #fffdf9 100%);
-  padding: 24px 18px;
-  overflow: hidden;
+  background: transparent;
+}
+
+/* Sutil patrón de fondo */
+.page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: 
+    radial-gradient(circle at 20% 30%, rgba(201, 133, 31, 0.03) 0%, transparent 25%),
+    radial-gradient(circle at 80% 70%, rgba(178, 94, 21, 0.02) 0%, transparent 30%);
+  pointer-events: none;
+  z-index: 0;
 }
 
 .backgroundGlow {
-  position: absolute;
-  right: -120px;
-  top: -120px;
-  width: 320px;
-  height: 320px;
-  border-radius: 999px;
-  background: radial-gradient(circle, rgba(218, 147, 76, 0.3) 0%, transparent 70%);
-  pointer-events: none;
+  display: none;
 }
 
 .layout {
@@ -29,18 +32,34 @@
 
 .welcomeCard {
   border-radius: 22px;
-  background: #ffffff;
-  padding: 24px;
-  border: 2px solid #e0c5a4;
-  box-shadow: 0 18px 32px rgba(63, 44, 20, 0.14);
+  background: linear-gradient(135deg, #ffffff 0%, #fffbf5 50%, #fff8f0 100%);
+  padding: 28px 32px;
+  border: 2px solid #e8d5c0;
+  box-shadow: 
+    0 18px 32px rgba(63, 44, 20, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.welcomeCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(201, 133, 31, 0.08) 0%, transparent 70%);
+  pointer-events: none;
 }
 
 .welcomeCard:hover {
   transform: translateY(-4px);
   box-shadow: 
     0 24px 40px rgba(63, 44, 20, 0.18),
-    0 0 0 1px rgba(224, 197, 164, 0.3);
+    0 0 0 1px rgba(224, 197, 164, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
 .filtersBar {
@@ -48,10 +67,25 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
   border-radius: 16px;
-  background: #fffaf4;
-  border: 2px solid #e5cfb1;
+  background: linear-gradient(135deg, #fffcf7 0%, #fff9f0 100%);
+  border: 2px solid #e8d5c0;
   box-shadow: 0 10px 24px rgba(72, 50, 23, 0.09);
-  padding: 16px;
+  padding: 18px 20px;
+  position: relative;
+}
+
+.filtersBar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.5), transparent);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
 }
 
 .filterLabel {
@@ -66,16 +100,21 @@
   min-height: 44px;
   border-radius: 10px;
   border: 2px solid #dcc2a1;
-  background: #ffffff;
+  background: linear-gradient(180deg, #ffffff 0%, #fdf9f5 100%);
   color: #4f391e;
   font-size: 0.9375rem;
-  padding: 0 12px;
+  padding: 0 36px 0 14px;
   transition: all 0.2s ease;
   cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238f4a0f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
 }
 
 .select:hover {
   border-color: #b25e15;
+  background-color: #fffbf8;
 }
 
 .select:focus {
@@ -160,11 +199,24 @@
 .panel,
 .mapPanel {
   border-radius: 22px;
-  background: #ffffff;
-  border: 2px solid #e0c5a4;
+  background: linear-gradient(180deg, #ffffff 0%, #fffbf8 100%);
+  border: 2px solid #e8d5c0;
   box-shadow: 0 18px 32px rgba(63, 44, 20, 0.13);
-  padding: 20px;
+  padding: 24px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.panel::before,
+.mapPanel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, rgba(201, 133, 31, 0.3), transparent);
 }
 
 .panel:hover,
@@ -192,10 +244,41 @@
   margin-top: 14px;
   height: 190px;
   border-radius: 16px;
-  background: linear-gradient(180deg, #fdf5eb 0%, #fff 100%);
-  border: 1px dashed #e5c7a3;
+  background: 
+    linear-gradient(90deg, rgba(201, 133, 31, 0.03) 1px, transparent 1px),
+    linear-gradient(rgba(201, 133, 31, 0.03) 1px, transparent 1px),
+    linear-gradient(180deg, #fdf8f0 0%, #fff 100%);
+  background-size: 40px 40px, 40px 40px, 100% 100%;
+  border: 1px solid #e8d5c0;
   position: relative;
   overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  padding: 20px;
+  gap: 8px;
+}
+
+.fakeLineChart::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.3) 0%, transparent 30%);
+  pointer-events: none;
+}
+
+.fakeLineChart .bar {
+  flex: 1;
+  background: linear-gradient(180deg, #c96e1f 0%, #e8a854 100%);
+  border-radius: 6px 6px 0 0;
+  min-height: 20px;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.fakeLineChart .bar:hover {
+  background: linear-gradient(180deg, #b25e15 0%, #d49a4a 100%);
+  transform: scaleY(1.05);
+  transform-origin: bottom;
 }
 
 .lineSegment {
@@ -213,25 +296,45 @@
   margin-top: 16px;
   width: 190px;
   height: 190px;
-  border-radius: 999px;
-  background: conic-gradient(#c66c1e 0deg 130deg, #f2bc85 130deg 255deg, #f7dfc4 255deg 360deg);
+  border-radius: 50%;
+  background: conic-gradient(
+    #c66c1e 0deg 130deg, 
+    #e8a854 130deg 200deg,
+    #f2bc85 200deg 255deg, 
+    #f7dfc4 255deg 360deg
+  );
   display: grid;
   place-items: center;
   margin-left: auto;
   margin-right: auto;
-  box-shadow: 0 8px 20px rgba(198, 108, 30, 0.2);
+  box-shadow: 
+    0 8px 20px rgba(198, 108, 30, 0.2),
+    inset 0 -4px 12px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.fakeDonut::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #fffbf8 0%, #fff5e8 100%);
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .donutCenter {
   width: 84px;
   height: 84px;
-  border-radius: 999px;
-  background: #ffffff;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #ffffff 0%, #fdf9f5 100%);
   display: grid;
   place-items: center;
   color: #9f5312;
   font-size: 1.1rem;
   font-weight: 800;
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 4px 12px rgba(198, 108, 30, 0.15);
 }
 
 .mapHeader {
@@ -290,13 +393,38 @@
   margin-top: 14px;
   min-height: 260px;
   border-radius: 16px;
-  border: 2px dashed #d5b087;
-  background: linear-gradient(180deg, #fdf8f1 0%, #fff 100%);
+  border: 2px solid #e8d5c0;
+  background: 
+    linear-gradient(180deg, #fdf8f1 0%, #fff 100%);
   display: grid;
   place-content: center;
   text-align: center;
   color: #8d704c;
   gap: 6px;
+  position: relative;
+  overflow: hidden;
+}
+
+.mapPlaceholder::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: 
+    radial-gradient(circle at 20% 30%, rgba(201, 133, 31, 0.08) 0%, transparent 20%),
+    radial-gradient(circle at 80% 70%, rgba(178, 94, 21, 0.06) 0%, transparent 25%),
+    radial-gradient(circle at 50% 50%, rgba(212, 160, 90, 0.05) 0%, transparent 30%);
+  pointer-events: none;
+}
+
+.mapPlaceholder::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(0deg, rgba(255, 255, 255, 0.8) 0%, transparent 100%);
+  pointer-events: none;
 }
 
 /* Loading spinner */
@@ -362,4 +490,38 @@
     flex-direction: column;
     align-items: flex-start;
   }
+}
+
+/* Leyenda del donut */
+.legendContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e8d5c0;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+}
+
+.legendDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legendLabel {
+  color: #5a4530;
+  font-weight: 600;
+}
+
+.legendValue {
+  color: #8f4a0f;
+  font-weight: 700;
 }

@@ -3,7 +3,24 @@
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr);
   gap: 14px;
-  min-height: calc(100vh - 48px);
+  min-height: 100vh;
+  padding: 14px;
+  box-sizing: border-box;
+  /* Imagen de fondo general que abarca toda la pantalla */
+  background-image: url('/imagen_bugavalle.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+/* Capa superpuesta para mejorar legibilidad (más transparente para ver la imagen) */
+.shell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(248, 244, 240, 0.55) 0%, rgba(250, 247, 244, 0.5) 50%, rgba(253, 252, 250, 0.55) 100%);
+  z-index: 0;
 }
 
 .overlay {
@@ -29,6 +46,7 @@
   flex-direction: column;
   gap: 14px;
   overflow-y: auto;
+  z-index: 1;
 }
 
 .sidebarBrand {
@@ -151,6 +169,7 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
+  z-index: 1;
 }
 
 .sidebarClose {

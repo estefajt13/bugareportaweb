@@ -1,7 +1,7 @@
 .page {
   min-height: 100vh;
-  background: linear-gradient(180deg, #efe2d3 0%, #f8f2ea 55%, #fffdf9 100%);
-  padding: 24px 18px;
+  position: relative;
+  background: transparent;
 }
 
 .card {

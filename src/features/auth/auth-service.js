@@ -137,6 +137,12 @@ export async function loginWithRoleValidation({
 
     await firebaseUser.reload(); 
 
+    if (userData.emailVerified === false) {
+      await signOut(auth);
+      throw createUserFacingError(
+        "Tu cuenta aún no ha sido verificada. Revisa tu correo."
+      );
+    } 
 
     const userDocRef = doc(db, "users", firebaseUser.uid);
     const userDoc = await getDoc(userDocRef);
@@ -149,13 +155,6 @@ export async function loginWithRoleValidation({
     const userData = userDoc.data();
     let userStatus = userData.estado;
     const userRole = normalizeRole(userData.rol);
-
-    if (userData.emailVerified === false) {
-      await signOut(auth);
-      throw createUserFacingError(
-        "Tu cuenta aún no ha sido verificada. Revisa tu correo."
-      );
-    } 
 
     if (userStatus === "PENDIENTE") {
       await updateDoc(userDocRef, { estado: "ACTIVO" });
