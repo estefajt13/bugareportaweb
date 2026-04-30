@@ -35,6 +35,8 @@ export default function LoginPage() {
   useEffect(() => {
     const role = profile?.rol;
 
+    if (isLoading) return;
+
     if (!isLoading && isAuthenticated && role && role !== "Ciudadano") {
       router.replace(getRouteByRole(role));
     }
@@ -73,6 +75,7 @@ export default function LoginPage() {
     }
 
     setIsSubmitting(true);
+    setErrorMessage(""); // limpia errores previos
 
     try {
       const authResult = await loginWithRoleValidation({
@@ -267,11 +270,11 @@ export default function LoginPage() {
               </button>
             </div>
 
-            {errorMessage ? (
+            {!isSubmitting && errorMessage ? (
               <p className={styles.error}>{errorMessage}</p>
             ) : null}
 
-            {successMessage ? (
+            {!isSubmitting && successMessage ? (
               <p className={styles.success}>{successMessage}</p>
             ) : null}
 
