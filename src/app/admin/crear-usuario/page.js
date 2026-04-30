@@ -36,7 +36,6 @@ export default function CrearUsuarioPage() {
   const [photoPreview, setPhotoPreview] = useState(null);
   const [photoFile, setPhotoFile] = useState(null);
 
-
   function updateField(event) {
     const { name, value } = event.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -67,14 +66,13 @@ export default function CrearUsuarioPage() {
     if (fileInput) fileInput.value = '';
   }
 
-
   async function handleSubmit(event) {
     event.preventDefault();
     setError("");
     setSuccess("");
 
     if (!isValidEmail(form.correo.trim())) {
-      setError("Ingresa un correo valido.");
+      setError("Ingresa un correo válido.");
       return;
     }
 
@@ -96,17 +94,29 @@ export default function CrearUsuarioPage() {
     setIsSaving(true);
 
     try {
+      // Crear usuario (esto cerrará la sesión actual)
       const userId = await createAdminUser({
         ...form,
         password,
         photoFile,
       });
-      setSuccess(`Usuario creado exitosamente. Se ha enviado un correo de verificación a ${form.correo}. ID: ${userId}`);
+
+      setSuccess(`Usuario creado exitosamente. ID: ${userId}. Serás redirigido al login.`);
+      
+      // Limpiar formulario
       setForm(initialForm);
       setPassword("");
       setConfirmPassword("");
-    } catch {
-      setError("No fue posible crear el usuario en este momento.");
+      setPhotoPreview(null);
+      setPhotoFile(null);
+
+      // Redirigir al login después de 3 segundos (el admin debe volver a iniciar sesión)
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 3000);
+
+    } catch (err) {
+      setError("No fue posible crear el usuario en este momento. Verifica que el correo no esté en uso.");
     } finally {
       setIsSaving(false);
     }

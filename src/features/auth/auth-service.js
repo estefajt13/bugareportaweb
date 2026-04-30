@@ -2,7 +2,6 @@
 
 import {
   createUserWithEmailAndPassword,
-  deleteUser,
   sendEmailVerification,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
@@ -47,22 +46,22 @@ function mapLoginError(error) {
 
   const authMessages = {
     "auth/invalid-credential":
-      "Usuario o contraseรฑa incorrectos. Verifica tus datos e intenta nuevamente.",
+      "Usuario o contraseña incorrectos. Verifica tus datos e intenta nuevamente.",
     "auth/user-not-found":
       "No existe una cuenta con ese correo en la plataforma web.",
     "auth/wrong-password":
-      "La contraseรฑa ingresada no es correcta.",
-    "auth/invalid-email": "El formato del correo electrรณnico es invรกlido.",
+      "La contraseña ingresada no es correcta.",
+    "auth/invalid-email": "El formato del correo electrónico es inválido.",
     "auth/user-disabled":
-      "Esta cuenta estรก deshabilitada. Contacta al administrador del sistema.",
+      "Esta cuenta está deshabilitada. Contacta al administrador del sistema.",
     "auth/too-many-requests":
       "Se bloquearon temporalmente los intentos de acceso. Espera unos minutos e intenta de nuevo.",
     "auth/network-request-failed":
-      "No hay conexiรณn con el servidor de autenticaciรณn. Revisa internet e intenta nuevamente.",
+      "No hay conexión con el servidor de autenticación. Revisa internet e intenta nuevamente.",
     "auth/internal-error":
-      "Ocurriรณ un error interno del servidor de autenticaciรณn. Intenta nuevamente en unos minutos.",
+      "Ocurrió un error interno del servidor de autenticación. Intenta nuevamente en unos minutos.",
     "auth/operation-not-allowed":
-      "El inicio de sesiรณn no estรก habilitado en este momento. Contacta a soporte.",
+      "El inicio de sesión no está habilitado en este momento. Contacta a soporte.",
   };
 
   if (authMessages[code]) {
@@ -73,37 +72,37 @@ function mapLoginError(error) {
     "firestore/permission-denied":
       "No tienes permisos para consultar tu perfil web. Contacta al administrador.",
     "firestore/unavailable":
-      "El servicio de datos no estรก disponible por el momento. Intenta nuevamente.",
+      "El servicio de datos no está disponible por el momento. Intenta nuevamente.",
     "firestore/deadline-exceeded":
-      "La consulta tardรณ demasiado. Verifica tu conexiรณn e intenta nuevamente.",
+      "La consulta tardó demasiado. Verifica tu conexión e intenta nuevamente.",
     "firestore/resource-exhausted":
-      "El servicio estรก con alta carga. Intenta de nuevo en unos minutos.",
+      "El servicio está con alta carga. Intenta de nuevo en unos minutos.",
   };
 
   if (firestoreMessages[code]) {
     return firestoreMessages[code];
   }
 
-  return "No fue posible iniciar sesiรณn en este momento. Intenta nuevamente.";
+  return "No fue posible iniciar sesión en este momento. Intenta nuevamente.";
 }
 
 function mapPasswordResetError(error) {
   const code = normalizeErrorCode(error);
   const messages = {
     "auth/user-not-found":
-      "No existe una cuenta asociada a ese correo electrรณnico.",
-    "auth/invalid-email": "El correo electrรณnico ingresado no es vรกlido.",
+      "No existe una cuenta asociada a ese correo electrónico.",
+    "auth/invalid-email": "El correo electrónico ingresado no es válido.",
     "auth/network-request-failed":
-      "No hay conexiรณn para enviar el correo de recuperaciรณn. Intenta nuevamente.",
+      "No hay conexión para enviar el correo de recuperación. Intenta nuevamente.",
     "auth/too-many-requests":
       "Se realizaron demasiadas solicitudes. Espera unos minutos para reintentar.",
     "auth/internal-error":
-      "No fue posible contactar al servidor de recuperaciรณn. Intenta de nuevo.",
+      "No fue posible contactar al servidor de recuperación. Intenta de nuevo.",
   };
 
   return (
     messages[code] ||
-    "No fue posible enviar el correo de recuperaciรณn en este momento."
+    "No fue posible enviar el correo de recuperación en este momento."
   );
 }
 
@@ -139,7 +138,7 @@ export async function loginWithRoleValidation({
     if (!firebaseUser.emailVerified) {
       await signOut(auth);
       throw createUserFacingError(
-        "Por favor, verifica tu correo electrรณnico antes de continuar."
+        "Por favor, verifica tu correo electrónico antes de continuar."
       );
     }
 
@@ -277,35 +276,16 @@ export async function deactivateFuncionario(uid) {
   if (!currentUser) {
     throw new Error("No hay sesión activa");
   }
-  
-  // Check if current user is admin
-  const adminDocRef = doc(db, "users", currentUser.uid);
-  const adminDoc = await getDoc(adminDocRef);
-  if (!adminDoc.exists() || adminDoc.data().rol !== "Administrador") {
-    throw new Error("No tiene permisos de administrador");
-  }
-  
-  // Step 1: Mark user as INACTIVO in Firestore to prevent login
+
+  // Eliminar de Firestore (marcar como inactivo primero)
   const userDocRef = doc(db, "users", uid);
   await updateDoc(userDocRef, { 
     estado: "INACTIVO",
     deactivatedAt: serverTimestamp(),
     deactivatedBy: currentUser.uid
   });
-  
-  // Step 2: Delete the Firestore document
   await deleteDoc(userDocRef);
-  
-  // Step 3: Delete from Firebase Authentication
-  // Note: Firebase client SDK has limitations - we can only delete the current user
-  // For a complete solution, a Cloud Function with Admin SDK should be used
-  // As a workaround, we'll attempt to use the Firebase Admin SDK via a callable function
-  // or document the limitation for now
-  
-  // For client-side only implementation, the auth account remains but cannot login
-  // because the Firestore document is deleted/marked as INACTIVO
-  // The loginWithRoleValidation function already checks for estado !== "ACTIVO"
-  
+
   return { success: true, message: "Usuario desactivado exitosamente" };
 }
 
@@ -326,7 +306,7 @@ export async function createAdminUser({
 }) {
   let photoURL = "/avatar_placeholder.svg";
 
-  // 1. Crear usuario en Firebase Authentication
+  // 1. Crear usuario en Firebase Authentication (esto cambiará la sesión)
   const userCredential = await createUserWithEmailAndPassword(auth, correo, password);
   const user = userCredential.user;
 
@@ -343,9 +323,8 @@ export async function createAdminUser({
       );
       await uploadBytes(fileRef, photoFile);
       photoURL = await getDownloadURL(fileRef);
-    } catch (error) {
-      console.warn("Error subiendo foto a Storage, usando avatar por defecto:", error);
-      // Continuamos con el avatar por defecto si falla la subida
+    } catch (storageError) {
+      console.warn("Error subiendo foto a Storage, usando avatar por defecto:", storageError);
     }
   }
 
@@ -355,10 +334,10 @@ export async function createAdminUser({
     photoURL
   });
 
-  // 3. Enviar correo de verificaciรณn
+  // 4. Enviar correo de verificación
   await sendEmailVerification(user);
 
-  // 4. Guardar datos adicionales en la colecciรณn users
+  // 5. Guardar datos adicionales en la colección users
   await setDoc(doc(db, "users", user.uid), {
     nombre: nombre.trim(),
     id: id.trim(),
@@ -375,6 +354,9 @@ export async function createAdminUser({
     emailVerified: false,
     createdAt: serverTimestamp(),
   });
+
+  // 6. Cerrar sesión del nuevo usuario (el admin deberá volver a iniciar sesión)
+  await signOut(auth);
 
   return user.uid;
 }
