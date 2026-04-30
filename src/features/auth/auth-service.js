@@ -2,6 +2,7 @@
 
 import {
   createUserWithEmailAndPassword,
+  deleteUser,
   sendEmailVerification,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
@@ -11,11 +12,15 @@ import {
 import {
   addDoc,
   collection,
+  deleteDoc,
   doc,
   getDoc,
+  getDocs,
+  query,
   setDoc,
   serverTimestamp,
   updateDoc,
+  where,
 } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { auth, configurePersistence, db, storage } from "@/lib/firebase/client";
@@ -252,6 +257,56 @@ export async function createStaffUser({
   });
 
   return createdDoc.id;
+}
+
+export async function getFuncionarios() {
+  const q = query(collection(db, "users"), where("rol", "==", "Funcionario"));
+  const querySnapshot = await getDocs(q);
+  const funcionarios = [];
+  querySnapshot.forEach((doc) => {
+    funcionarios.push({
+      uid: doc.id,
+      ...doc.data(),
+    });
+  });
+  return funcionarios;
+}
+
+export async function deactivateFuncionario(uid) {
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
+    throw new Error("No hay sesión activa");
+  }
+  
+  // Check if current user is admin
+  const adminDocRef = doc(db, "users", currentUser.uid);
+  const adminDoc = await getDoc(adminDocRef);
+  if (!adminDoc.exists() || adminDoc.data().rol !== "Administrador") {
+    throw new Error("No tiene permisos de administrador");
+  }
+  
+  // Step 1: Mark user as INACTIVO in Firestore to prevent login
+  const userDocRef = doc(db, "users", uid);
+  await updateDoc(userDocRef, { 
+    estado: "INACTIVO",
+    deactivatedAt: serverTimestamp(),
+    deactivatedBy: currentUser.uid
+  });
+  
+  // Step 2: Delete the Firestore document
+  await deleteDoc(userDocRef);
+  
+  // Step 3: Delete from Firebase Authentication
+  // Note: Firebase client SDK has limitations - we can only delete the current user
+  // For a complete solution, a Cloud Function with Admin SDK should be used
+  // As a workaround, we'll attempt to use the Firebase Admin SDK via a callable function
+  // or document the limitation for now
+  
+  // For client-side only implementation, the auth account remains but cannot login
+  // because the Firestore document is deleted/marked as INACTIVO
+  // The loginWithRoleValidation function already checks for estado !== "ACTIVO"
+  
+  return { success: true, message: "Usuario desactivado exitosamente" };
 }
 
 export async function createAdminUser({
