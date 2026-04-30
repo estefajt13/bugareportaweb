@@ -7,6 +7,17 @@ import AppFooter from "@/components/layout/AppFooter";
 import { createAdminUser } from "@/features/auth/auth-service";
 import styles from "./page.module.css";
 
+const AREAS = [
+  "Infraestructura vial y espacio público",
+  "Alumbrado público",
+  "Servicios públicos domiciliarios",
+  "Medio ambiente y aseo urbano",
+  "Seguridad ciudadana",
+  "Salud pública",
+  "Tránsito y movilidad",
+  "Gobierno y atención ciudadana",
+];
+
 const initialForm = {
   nombre: "",
   id: "",
@@ -15,7 +26,7 @@ const initialForm = {
   direccion: "",
   departamento: "Valle",
   ciudad: "Buga",
-  area: "Infraestructura",
+  area: AREAS[0],
   cargo: "",
   rol: "Administrador",
   estado: "ACTIVO",
@@ -250,14 +261,20 @@ export default function CrearUsuarioPage() {
 
               <div className={styles.row2}>
                 <label className={styles.field}>
-                  Area
-                  <input
+                  Área
+                  <select
                     name="area"
                     value={form.area}
                     onChange={updateField}
                     className={styles.input}
                     required
-                  />
+                  >
+                    {AREAS.map((a) => (
+                      <option key={a} value={a}>
+                        {a}
+                      </option>
+                    ))}
+                  </select>
                 </label>
                 <label className={styles.field}>
                   Cargo
