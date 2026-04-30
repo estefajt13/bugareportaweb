@@ -64,10 +64,20 @@ export default function AdminShell({
   }, []);
 
   async function handleLogout() {
-    setIsLoggingOut(true);
+  setIsLoggingOut(true);
+
+  try {
     await logoutUser();
-    router.replace("/login");
+
+    // fuerza actualización completa
+    window.location.href = "/login";
+
+  } catch (error) {
+    console.error("Error al cerrar sesión:", error);
+  } finally {
+    setIsLoggingOut(false);
   }
+}
 
   return (
     <div className={styles.shell}>

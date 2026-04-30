@@ -16,7 +16,7 @@
 .overlay {
   position: absolute;
   inset: 0;
-  background: rgba(255, 255, 255, 0.42);
+  background: rgba(243, 194, 147, 0.301);
   z-index: 1;
 }
 
@@ -45,8 +45,8 @@
 }
 
 .tagline {
-  margin-top: 8px;
-  color: #6e6e6e;
+  margin-top: 15px;
+  color: #575757;
   font-size: 0.85rem;
 }
 

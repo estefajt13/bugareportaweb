@@ -130,6 +130,7 @@ export default function LoginPage() {
         alt="Vista panorámica de Buga"
         fill
         priority
+        
         className={styles.background}
       />
       <div className={styles.overlay} />
