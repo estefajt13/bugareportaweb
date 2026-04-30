@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase/client";
 
@@ -36,12 +36,20 @@ export function AuthProvider({ children }) {
     return () => unsubscribe();
   }, []);
 
+  //  NUEVO: logout centralizado
+  const logout = async () => {
+    await signOut(auth);
+    setUser(null);
+    setProfile(null);
+  };
+
   const value = useMemo(
     () => ({
       user,
       profile,
       isAuthenticated: Boolean(user),
       isLoading,
+      logout, //  importante
     }),
     [isLoading, profile, user]
   );

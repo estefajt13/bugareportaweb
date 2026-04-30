@@ -112,7 +112,7 @@ export default function AdminShell({
           </div>
           <div>
             <p className={styles.brandTitle}>BugaReporta+</p>
-            <p className={styles.brandSubtitle}>Panel admin</p>
+            <p className={styles.brandSubtitle}>Panel administrador</p>
           </div>
         </div>
 
