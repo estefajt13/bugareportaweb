@@ -11,6 +11,8 @@ import {
   fetchFuncionarioReport,
   updateFuncionarioReportStatus,
   assignFuncionarioReport,
+  fetchFuncionarioReportHistory,
+  addFuncionarioComment,
 } from "@/features/reports/funcionario-api";
 import styles from "./page.module.css";
 
@@ -53,10 +55,14 @@ export default function ReporteDetallePage() {
   const router = useRouter();
   const { user, profile } = useAuth();
   const [reporte, setReporte] = useState(null);
+  const [historial, setHistorial] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [actualizando, setActualizando] = useState(false);
   const [nuevoEstado, setNuevoEstado] = useState("");
+  const [comentario, setComentario] = useState("");
+  const [notificarCiudadano, setNotificarCiudadano] = useState(false);
+  const [showCommentBox, setShowCommentBox] = useState(false);
 
   const areaBruta = profile?.area || "";
   const areaQuery = areaBruta === "Infraestructura" ? "Infraestructura vial y espacio público" :
@@ -70,7 +76,7 @@ export default function ReporteDetallePage() {
                     areaBruta;
 
   useEffect(() => {
-    async function cargarReporte() {
+    async function cargarDatos() {
       if (!user || !areaQuery || !params.id) {
         setIsLoading(false);
         return;
@@ -80,18 +86,23 @@ export default function ReporteDetallePage() {
       setError("");
 
       try {
+        // Cargar reporte
         const data = await fetchFuncionarioReport(user.uid, areaQuery, parseInt(params.id));
         setReporte(data);
         setNuevoEstado(data.estado);
+
+        // Cargar historial
+        const history = await fetchFuncionarioReportHistory(user.uid, areaQuery, parseInt(params.id));
+        setHistorial(history);
       } catch (err) {
-        console.error("Error cargando reporte:", err);
+        console.error("Error cargando datos:", err);
         setError("No se pudo cargar el reporte. Es posible que no pertenezca a tu área.");
       } finally {
         setIsLoading(false);
       }
     }
 
-    cargarReporte();
+    cargarDatos();
   }, [user, areaQuery, params.id]);
 
   async function handleAsignar() {
@@ -115,11 +126,45 @@ export default function ReporteDetallePage() {
 
     setActualizando(true);
     try {
-      const data = await updateFuncionarioReportStatus(user.uid, areaQuery, reporte.id, nuevoEstado);
+      const data = await updateFuncionarioReportStatus(
+        user.uid, areaQuery, reporte.id, nuevoEstado, 
+        comentario || null, notificarCiudadano
+      );
       setReporte(data);
+      
+      // Recargar historial
+      const history = await fetchFuncionarioReportHistory(user.uid, areaQuery, reporte.id);
+      setHistorial(history);
+      
+      // Limpiar comentario
+      setComentario("");
+      setNotificarCiudadano(false);
     } catch (err) {
       console.error("Error actualizando estado:", err);
       alert("No se pudo actualizar el estado: " + err.message);
+    } finally {
+      setActualizando(false);
+    }
+  }
+
+  async function handleAgregarComentario() {
+    if (!user || !areaQuery || !reporte || !comentario.trim()) return;
+
+    setActualizando(true);
+    try {
+      await addFuncionarioComment(user.uid, areaQuery, reporte.id, comentario, notificarCiudadano);
+      
+      // Recargar historial
+      const history = await fetchFuncionarioReportHistory(user.uid, areaQuery, reporte.id);
+      setHistorial(history);
+      
+      // Limpiar
+      setComentario("");
+      setNotificarCiudadano(false);
+      setShowCommentBox(false);
+    } catch (err) {
+      console.error("Error agregando comentario:", err);
+      alert("No se pudo agregar el comentario: " + err.message);
     } finally {
       setActualizando(false);
     }
@@ -257,7 +302,7 @@ export default function ReporteDetallePage() {
                   </button>
                 )}
 
-                {/* Selector de estado - solo si es su reporte o es admin */}
+                {/* Selector de estado - solo si es su reporte */}
                 {esSuReporte && (
                   <div className={styles.estadoSection}>
                     <label className={styles.estadoLabel}>
@@ -284,6 +329,28 @@ export default function ReporteDetallePage() {
                       </select>
                     </label>
 
+                    {/* Comentario opcional */}
+                    <div className={styles.comentarioSection}>
+                      <label className={styles.checkboxLabel}>
+                        <input
+                          type="checkbox"
+                          checked={notificarCiudadano}
+                          onChange={(e) => setNotificarCiudadano(e.target.checked)}
+                          disabled={actualizando}
+                        />
+                        <span>Enviar mensaje al ciudadano</span>
+                      </label>
+
+                      <textarea
+                        value={comentario}
+                        onChange={(e) => setComentario(e.target.value)}
+                        placeholder="Comentario sobre el cambio (opcional)"
+                        className={styles.textarea}
+                        disabled={actualizando}
+                        rows={3}
+                      />
+                    </div>
+
                     <button
                       className={styles.actionButton}
                       onClick={handleActualizarEstado}
@@ -300,12 +367,97 @@ export default function ReporteDetallePage() {
                   </div>
                 )}
 
+                {/* Botón para agregar comentario sin cambiar estado */}
+                {esSuReporte && (
+                  <div className={styles.commentSection}>
+                    {!showCommentBox ? (
+                      <button
+                        className={styles.commentButton}
+                        onClick={() => setShowCommentBox(true)}
+                        disabled={actualizando}
+                      >
+                        💬 Agregar comentario
+                      </button>
+                    ) : (
+                      <div className={styles.commentBox}>
+                        <label className={styles.checkboxLabel}>
+                          <input
+                            type="checkbox"
+                            checked={notificarCiudadano}
+                            onChange={(e) => setNotificarCiudadano(e.target.checked)}
+                            disabled={actualizando}
+                          />
+                          <span>Visible para el ciudadano</span>
+                        </label>
+                        <textarea
+                          value={comentario}
+                          onChange={(e) => setComentario(e.target.value)}
+                          placeholder="Escribe un comentario..."
+                          className={styles.textarea}
+                          disabled={actualizando}
+                          rows={3}
+                        />
+                        <div className={styles.commentActions}>
+                          <button
+                            className={styles.cancelButton}
+                            onClick={() => {
+                              setShowCommentBox(false);
+                              setComentario("");
+                              setNotificarCiudadano(false);
+                            }}
+                            disabled={actualizando}
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            className={styles.actionButton}
+                            onClick={handleAgregarComentario}
+                            disabled={actualizando || !comentario.trim()}
+                          >
+                            {actualizando ? "Guardando..." : "Guardar comentario"}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {!esSuReporte && reporte.uidFuncionario && (
                   <p className={styles.hint}>
                     Este reporte está asignado a otro funcionario.
                   </p>
                 )}
               </section>
+
+              {/* Historial */}
+              {historial.length > 0 && (
+                <section className={styles.card}>
+                  <h2 className={styles.cardTitle}>Historial de Cambios</h2>
+                  <div className={styles.historyList}>
+                    {historial.map((item) => (
+                      <div key={item.id} className={styles.historyItem}>
+                        <div className={styles.historyHeader}>
+                          <span className={styles.historyType}>
+                            {item.tipo === "estado" && "🔄 Cambio de estado"}
+                            {item.tipo === "mensaje_ciudadano" && "📩 Mensaje al ciudadano"}
+                            {item.tipo === "comentario_interno" && "📝 Comentario interno"}
+                          </span>
+                          <span className={styles.historyDate}>
+                            {new Date(item.fechaCambio).toLocaleString("es-CO")}
+                          </span>
+                        </div>
+                        <p className={styles.historyDesc}>{item.descripcion}</p>
+                        {item.comentario && (
+                          <p className={styles.historyComment}>{item.comentario}</p>
+                        )}
+                        {item.visibleCiudadano && (
+                          <span className={styles.visibleBadge}>Visible al ciudadano</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
             </div>
           </div>
 

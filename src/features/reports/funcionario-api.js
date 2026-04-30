@@ -87,14 +87,45 @@ export async function assignFuncionarioReport(uid, area, id) {
 }
 
 /**
- * Actualizar estado de un reporte
+ * Actualizar estado de un reporte con comentario opcional
  * @param {string} uid - UID del funcionario
  * @param {string} area - Área del funcionario
  * @param {number} id - ID del reporte
  * @param {string} estado - Nuevo estado
+ * @param {string} [comentario] - Comentario opcional
+ * @param {boolean} [notificarCiudadano] - Si se debe notificar al ciudadano
  */
-export async function updateFuncionarioReportStatus(uid, area, id, estado) {
-  return request(`/funcionario/reports/${id}/status`, uid, area, "PUT", { estado });
+export async function updateFuncionarioReportStatus(uid, area, id, estado, comentario = null, notificarCiudadano = false) {
+  return request(`/funcionario/reports/${id}/status`, uid, area, "PUT", { 
+    estado, 
+    comentario,
+    notificarCiudadano 
+  });
+}
+
+/**
+ * Agregar un comentario al reporte
+ * @param {string} uid - UID del funcionario
+ * @param {string} area - Área del funcionario
+ * @param {number} id - ID del reporte
+ * @param {string} comentario - Texto del comentario
+ * @param {boolean} visibleCiudadano - Si el ciudadano puede ver el comentario
+ */
+export async function addFuncionarioComment(uid, area, id, comentario, visibleCiudadano = false) {
+  return request(`/funcionario/reports/${id}/comment`, uid, area, "POST", { 
+    comentario,
+    visibleCiudadano 
+  });
+}
+
+/**
+ * Obtener historial de un reporte
+ * @param {string} uid - UID del funcionario
+ * @param {string} area - Área del funcionario
+ * @param {number} id - ID del reporte
+ */
+export async function fetchFuncionarioReportHistory(uid, area, id) {
+  return request(`/funcionario/reports/${id}/history`, uid, area);
 }
 
 /**
