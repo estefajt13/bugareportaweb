@@ -304,59 +304,117 @@ export async function createAdminUser({
   password,
   photoFile = null,
 }) {
+  // 0. Guardar credenciales del administrador actual
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
+    throw new Error("No hay sesión de administrador activa");
+  }
+  
+  // Obtenemos el token del administrador actual
+  const adminToken = await currentUser.getIdToken();
+  
   let photoURL = "/avatar_placeholder.svg";
+  let newUserUid = null;
 
-  // 1. Crear usuario en Firebase Authentication (esto cambiará la sesión)
-  const userCredential = await createUserWithEmailAndPassword(auth, correo, password);
-  const user = userCredential.user;
+  try {
+    // 1. Crear usuario en Firebase Authentication usando REST API para no afectar la sesión
+    const firebaseProjectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+    const response = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${process.env.NEXT_PUBLIC_FIREBASE_API_KEY}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: correo.trim(),
+          password: password,
+          returnSecureToken: true
+        })
+      }
+    );
 
-  // 2. Subir foto a Firebase Storage si existe
-  if (photoFile) {
-    try {
-      const extension = photoFile.name.includes(".")
-        ? photoFile.name.split(".").pop()
-        : "jpg";
-      const safeId = id.trim().replace(/[^a-zA-Z0-9_-]/g, "");
-      const fileRef = ref(
-        storage,
-        `admin-photos/${safeId}-${Date.now()}.${extension}`
-      );
-      await uploadBytes(fileRef, photoFile);
-      photoURL = await getDownloadURL(fileRef);
-    } catch (storageError) {
-      console.warn("Error subiendo foto a Storage, usando avatar por defecto:", storageError);
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error?.message || 'Error creando usuario');
     }
+
+    const newUser = await response.json();
+    newUserUid = newUser.localId;
+
+    // 2. Subir foto a Firebase Storage si existe
+    if (photoFile) {
+      try {
+        const extension = photoFile.name.includes(".")
+          ? photoFile.name.split(".").pop()
+          : "jpg";
+        const safeId = id.trim().replace(/[^a-zA-Z0-9_-]/g, "");
+        const fileRef = ref(
+          storage,
+          `admin-photos/${safeId}-${Date.now()}.${extension}`
+        );
+        await uploadBytes(fileRef, photoFile);
+        photoURL = await getDownloadURL(fileRef);
+      } catch (storageError) {
+        console.warn("Error subiendo foto a Storage, usando avatar por defecto:", storageError);
+      }
+    }
+
+    // 3. Actualizar perfil del nuevo usuario (usando REST API)
+    await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:update?key=${process.env.NEXT_PUBLIC_FIREBASE_API_KEY}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          idToken: newUser.idToken,
+          displayName: nombre.trim(),
+          photoUrl: photoURL,
+          returnSecureToken: true
+        })
+      }
+    );
+
+    // 4. Enviar correo de verificación (usando REST API)
+    await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${process.env.NEXT_PUBLIC_FIREBASE_API_KEY}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          requestType: 'VERIFY_EMAIL',
+          idToken: newUser.idToken
+        })
+      }
+    );
+
+    // 5. Guardar datos adicionales en la colección users
+    await setDoc(doc(db, "users", newUserUid), {
+      nombre: nombre.trim(),
+      id: id.trim(),
+      correo: correo.trim(),
+      telefono: telefono.trim(),
+      direccion: direccion.trim(),
+      departamento: departamento.trim(),
+      ciudad: ciudad.trim(),
+      area: area.trim(),
+      cargo: cargo.trim(),
+      rol: rol.trim(),
+      estado,
+      photoURL,
+      emailVerified: false,
+      createdAt: serverTimestamp(),
+    });
+
+  } finally {
+    // 6. Restaurar sesión del administrador (siempre, incluso si hay error)
+    // No hacemos nada porque nunca cerramos la sesión del admin
+    // El admin sigue logueado todo el tiempo
   }
 
-  // 3. Actualizar perfil con el nombre y foto
-  await updateProfile(user, {
-    displayName: nombre.trim(),
-    photoURL
-  });
-
-  // 4. Enviar correo de verificación
-  await sendEmailVerification(user);
-
-  // 5. Guardar datos adicionales en la colección users
-  await setDoc(doc(db, "users", user.uid), {
-    nombre: nombre.trim(),
-    id: id.trim(),
-    correo: correo.trim(),
-    telefono: telefono.trim(),
-    direccion: direccion.trim(),
-    departamento: departamento.trim(),
-    ciudad: ciudad.trim(),
-    area: area.trim(),
-    cargo: cargo.trim(),
-    rol: rol.trim(),
-    estado,
-    photoURL,
-    emailVerified: false,
-    createdAt: serverTimestamp(),
-  });
-
-  // 6. Cerrar sesión del nuevo usuario (el admin deberá volver a iniciar sesión)
-  await signOut(auth);
-
-  return user.uid;
+  return newUserUid;
 }

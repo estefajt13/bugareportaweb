@@ -94,14 +94,14 @@ export default function CrearUsuarioPage() {
     setIsSaving(true);
 
     try {
-      // Crear usuario (esto cerrará la sesión actual)
+      // Crear usuario (sin cerrar sesión del administrador)
       const userId = await createAdminUser({
         ...form,
         password,
         photoFile,
       });
 
-      setSuccess(`Usuario creado exitosamente. ID: ${userId}. Serás redirigido al login.`);
+      setSuccess(`Usuario creado exitosamente. ID: ${userId}. El nuevo usuario debe verificar su correo electrónico.`);
       
       // Limpiar formulario
       setForm(initialForm);
@@ -110,10 +110,7 @@ export default function CrearUsuarioPage() {
       setPhotoPreview(null);
       setPhotoFile(null);
 
-      // Redirigir al login después de 3 segundos (el admin debe volver a iniciar sesión)
-      setTimeout(() => {
-        window.location.href = "/login";
-      }, 3000);
+      // No redirigir - el administrador puede seguir trabajando
 
     } catch (err) {
       setError("No fue posible crear el usuario en este momento. Verifica que el correo no esté en uso.");
