@@ -85,7 +85,7 @@ export default function CrearUsuarioPage() {
     setSuccess("");
 
     if (!isValidEmail(form.correo.trim())) {
-      setError("Ingresa un correo valido.");
+      setError("Ingresa un correo válido.");
       return;
     }
 
@@ -107,17 +107,26 @@ export default function CrearUsuarioPage() {
     setIsSaving(true);
 
     try {
+      // Crear usuario (sin cerrar sesión del administrador)
       const userId = await createAdminUser({
         ...form,
         password,
         photoFile,
       });
-      setSuccess(`Usuario creado exitosamente. Se ha enviado un correo de verificación a ${form.correo}. ID: ${userId}`);
+
+      setSuccess(`Usuario creado exitosamente. ID: ${userId}. El nuevo usuario debe verificar su correo electrónico.`);
+      
+      // Limpiar formulario
       setForm(initialForm);
       setPassword("");
       setConfirmPassword("");
-    } catch {
-      setError("No fue posible crear el usuario en este momento.");
+      setPhotoPreview(null);
+      setPhotoFile(null);
+
+      // No redirigir - el administrador puede seguir trabajando
+
+    } catch (err) {
+      setError("No fue posible crear el usuario en este momento. Verifica que el correo no esté en uso.");
     } finally {
       setIsSaving(false);
     }
@@ -169,6 +178,30 @@ export default function CrearUsuarioPage() {
                 </label>
                 <p className={styles.photoHint}>Formatos: JPG, PNG. Máx 5MB.</p>
               </div>
+
+              <div className={styles.row2}>
+                <label className={styles.field}>
+                  Nombre
+                  <input
+                    name="nombre"
+                    value={form.nombre}
+                    onChange={updateField}
+                    className={styles.input}
+                    required
+                  />
+                </label>
+                <label className={styles.field}>
+                  ID
+                  <input
+                    name="id"
+                    value={form.id}
+                    onChange={updateField}
+                    className={styles.input}
+                    required
+                  />
+                </label>
+              </div>
+
 
               <div className={styles.row2}>
                 <label className={styles.field}>
