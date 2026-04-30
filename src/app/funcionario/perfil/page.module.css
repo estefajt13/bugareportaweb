@@ -1,0 +1,190 @@
+.page {
+  min-height: 100vh;
+  background: #faf8f5;
+}
+
+/* Header with Avatar */
+.header {
+  margin-bottom: 24px;
+}
+
+.avatarSection {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: linear-gradient(135deg, #f5e6d3 0%, #f1dfcb 100%);
+  border-radius: 20px;
+  padding: 24px;
+  border: 1px solid #e2c8ab;
+}
+
+.avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #b25e15 0%, #a05212 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar span {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.avatarInfo {
+  flex: 1;
+}
+
+.name {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #4a3a24;
+  margin: 0 0 4px 0;
+}
+
+.email {
+  font-size: 0.9rem;
+  color: #8d7251;
+  margin: 0 0 4px 0;
+}
+
+.role {
+  display: inline-block;
+  background: rgba(178, 94, 21, 0.15);
+  color: #b25e15;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* Content */
+.content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+/* Cards */
+.card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid #e2c8ab;
+}
+
+.cardTitle {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #644624;
+  margin: 0 0 20px 0;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #f0e4d5;
+}
+
+/* Info List */
+.infoList {
+  margin: 0;
+  display: grid;
+  gap: 16px;
+}
+
+.infoItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.infoItem dt {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #8d7251;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.infoItem dd {
+  font-size: 0.95rem;
+  color: #4a3a24;
+  margin: 0;
+  font-weight: 600;
+}
+
+/* Badges */
+.areaBadge {
+  background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+  color: #e65100;
+  padding: 6px 12px;
+  border-radius: 8px;
+  display: inline-block;
+  font-weight: 700;
+}
+
+.statusBadge {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  background: #f0f0f0;
+  color: #666;
+  display: inline-block;
+}
+
+.statusBadge.active {
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  color: #2e7d32;
+}
+
+/* Coming Soon */
+.comingSoon {
+  text-align: center;
+  padding: 30px 20px;
+  color: #8d7251;
+  font-size: 0.95rem;
+  background: #faf6f0;
+  border-radius: 12px;
+  border: 2px dashed #e2c8ab;
+  margin: 0;
+}
+
+/* Loading & Error */
+.loading,
+.error {
+  text-align: center;
+  padding: 60px 20px;
+  font-size: 1rem;
+}
+
+.loading {
+  color: #8d7251;
+}
+
+.error {
+  color: #c62828;
+  background: #fff0f0;
+  border-radius: 12px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .avatarSection {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .content {
+    grid-template-columns: 1fr;
+  }
+}
