@@ -26,6 +26,8 @@
  * @property {number} lat
  * @property {number} lng
  * @property {number} [total]
+ * @property {string} [kind]
+ * @property {number} [clusterId]
  */
 
 /**
@@ -42,6 +44,7 @@ export const REPORTS_ENDPOINTS = {
   summary: "/admin/reports/summary",
   dailyProcesses: "/admin/reports/daily-processes",
   reportsByArea: "/admin/reports/by-area",
+  mapData: "/admin/reports/map-data",
 };
 
 /** @type {AdminDashboardData} */

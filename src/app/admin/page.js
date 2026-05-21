@@ -8,6 +8,8 @@ import { EMPTY_ADMIN_DASHBOARD_DATA } from "@/features/reports/types";
 import AdminShell from "@/components/navigation/AdminShell";
 import AppFooter from "@/components/layout/AppFooter";
 import MetricCard from "@/components/dashboard/MetricCard";
+import MapboxReportMap from "@/components/dashboard/MapboxReportMap";
+import { fetchMapPoints } from "@/features/maps/maps-api";
 import styles from "./page.module.css";
 
 function formatMetricValue(value, suffix = "") {
@@ -25,11 +27,13 @@ const legendColors = ["#c66c1e", "#f2bc85", "#f7dfc4", "#e8a854"];
 
 export default function AdminPage() {
   const { user, profile } = useAuth();
-  const [mapMode, setMapMode] = useState("zona");
   const [reportScope, setReportScope] = useState("todos");
   const [selectedArea, setSelectedArea] = useState("todas");
   const [period, setPeriod] = useState("semanal");
   const [dashboardData, setDashboardData] = useState(EMPTY_ADMIN_DASHBOARD_DATA);
+  const [mapPoints, setMapPoints] = useState([]);
+  const [mapLoading, setMapLoading] = useState(true);
+  const [mapError, setMapError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [connectionStatus, setConnectionStatus] = useState(null); // null | 'connected' | 'error'
@@ -85,6 +89,47 @@ export default function AdminPage() {
     };
   }, [user]);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadMapPoints() {
+      if (!user) {
+        setMapLoading(false);
+        return;
+      }
+
+      setMapLoading(true);
+      setMapError("");
+
+      try {
+        const points = await fetchMapPoints({
+          estado: reportScope,
+          area: selectedArea,
+        });
+
+        if (isMounted) {
+          setMapPoints(points);
+        }
+      } catch (error) {
+        console.error("Error cargando mapa:", error);
+        if (isMounted) {
+          setMapPoints([]);
+          setMapError("No se pudo cargar el mapa de reportes.");
+        }
+      } finally {
+        if (isMounted) {
+          setMapLoading(false);
+        }
+      }
+    }
+
+    loadMapPoints();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user, reportScope, selectedArea]);
+
   const areaTopPercentage = useMemo(() => {
     if (!dashboardData.reportsByArea.length) {
       return null;
@@ -100,15 +145,17 @@ export default function AdminPage() {
         <AdminShell activeSection="dashboard" breadcrumb="Admin / Dashboard">
           <section className={styles.filtersBar}>
             <label className={styles.filterLabel}>
-              Tipo de reportes
+              Estado de reportes
               <select
                 className={styles.select}
                 value={reportScope}
                 onChange={(event) => setReportScope(event.target.value)}
               >
-                <option value="todos">Todos los reportes</option>
-                <option value="abiertos">Solo abiertos</option>
-                <option value="cerrados">Solo cerrados</option>
+                <option value="todos">Todos los estados</option>
+                <option value="pendiente">Pendiente</option>
+                <option value="en_revision">En revisión</option>
+                <option value="en_proceso">En proceso</option>
+                <option value="resuelto">Resuelto</option>
               </select>
             </label>
 
@@ -281,29 +328,17 @@ export default function AdminPage() {
               <div>
                 <h2 className={styles.panelTitle}>Mapa de reportes</h2>
                 <p className={styles.panelHint}>
-                  Cambia visualizacion por zona o por area.
+                  Reportes filtrados por área y estado. Si forman cluster, se muestra el centroide.
                 </p>
               </div>
-
-              <button
-                type="button"
-                className={styles.mapToggle}
-                onClick={() =>
-                  setMapMode((prev) => (prev === "zona" ? "area" : "zona"))
-                }
-              >
-                Ver por {mapMode === "zona" ? "area" : "zona"}
-              </button>
             </div>
 
-            <div className={styles.mapPlaceholder}>
-              <p>Mapa placeholder - modo actual: {mapMode}</p>
-              <p>
-                {isPlaceholderMode
-                  ? "Se activara cuando se conecte el servicio de reportes."
-                  : "Datos de mapa conectados. Render del mapa pendiente."}
-              </p>
-            </div>
+            <MapboxReportMap
+              accessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
+              points={mapPoints}
+              loading={mapLoading}
+              error={mapError}
+            />
           </section>
 
           <AppFooter />

@@ -1,0 +1,103 @@
+.wrapper {
+  position: relative;
+  min-height: 360px;
+}
+
+.mapContainer {
+  width: 100%;
+  height: 360px;
+  border-radius: 16px;
+  border: 1px solid #e8d5c0;
+  overflow: hidden;
+  background: #f6efe7;
+}
+
+.overlay,
+.emptyState,
+.errorState,
+.loadingState {
+  position: absolute;
+  inset: 16px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  font-weight: 700;
+  color: #6b5a45;
+  background: rgba(255, 250, 244, 0.82);
+  backdrop-filter: blur(2px);
+  pointer-events: none;
+}
+
+.errorState {
+  color: #a12f21;
+}
+
+.loadingState {
+  align-items: end;
+  place-items: end start;
+  padding: 14px 16px;
+  font-size: 0.9rem;
+}
+
+.legend {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 10px;
+  flex-wrap: wrap;
+  font-size: 0.82rem;
+  color: #6b5a45;
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid #ead8c4;
+  border-radius: 999px;
+  padding: 6px 10px;
+}
+
+.legendDotCluster,
+.legendDotReport {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.legendDotCluster {
+  background: #b25e15;
+}
+
+.legendDotReport {
+  background: #4b74ff;
+}
+
+.marker {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  display: grid;
+  place-items: center;
+}
+
+.markerCluster {
+  background: linear-gradient(135deg, #b25e15 0%, #d58a3a 100%);
+}
+
+.markerReport {
+  background: linear-gradient(135deg, #4b74ff 0%, #6f95ff 100%);
+}
+
+.markerBadge {
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  line-height: 1;
+}

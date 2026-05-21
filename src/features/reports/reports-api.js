@@ -111,6 +111,23 @@ export async function fetchAdminDashboardData(token) {
 }
 
 /**
+ * Obtener puntos para el mapa admin con filtros por estado y area.
+ * @param {string} token
+ * @param {{estado?: string, area?: string}} filters
+ */
+export async function fetchAdminMapPoints(token, filters = {}) {
+  const params = new URLSearchParams();
+  if (filters.estado && filters.estado !== "todos") params.append("estado", filters.estado);
+  if (filters.area && filters.area !== "todas") params.append("area", filters.area);
+
+  const queryString = params.toString();
+  const path = `${REPORTS_ENDPOINTS.mapData}${queryString ? `?${queryString}` : ""}`;
+
+  const response = await request(path, token);
+  return Array.isArray(response) ? response : (response?.items ?? []);
+}
+
+/**
  * Mapear respuesta de /by-area al formato esperado
  * Backend: [{areaNombre, total, porcentaje}]
  * Frontend: [{name, percentage, total}]
