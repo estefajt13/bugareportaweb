@@ -55,7 +55,7 @@ export default function AdminEstadisticasPage() {
           setConnectionStatus('connected');
         }
 
-        const data = await fetchEstadisticasDashboard({ periodo });
+        const data = await fetchEstadisticasDashboard({ periodo: period });
         if (isMounted) {
           setDashboardData(data);
         }

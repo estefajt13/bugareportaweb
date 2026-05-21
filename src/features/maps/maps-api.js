@@ -1,4 +1,4 @@
-const BASE_URL = process.env.NEXT_PUBLIC_MAPS_API_BASE_URL;
+const BASE_URL = process.env.NEXT_PUBLIC_MAPS_API_BASE_URL || "https://microserviciomapas-production.up.railway.app";
 
 function hasApiConfigured() {
   return typeof BASE_URL === "string" && BASE_URL.trim().length > 0;
