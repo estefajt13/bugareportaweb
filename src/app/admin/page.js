@@ -4,6 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import { AdminGuard } from "@/features/auth/auth-guard";
 import { useAuth } from "@/features/auth/auth-context";
 import { fetchAdminDashboardData, checkApiHealth } from "@/features/reports/reports-api";
+import {
+  fetchEstadisticasDashboard,
+  checkStatisticsApiHealth,
+  EMPTY_ESTADISTICAS_DASHBOARD_DATA,
+} from "@/features/statistics/statistics-api";
 import { EMPTY_ADMIN_DASHBOARD_DATA } from "@/features/reports/types";
 import AdminShell from "@/components/navigation/AdminShell";
 import AppFooter from "@/components/layout/AppFooter";
@@ -31,15 +36,18 @@ export default function AdminPage() {
   const [selectedArea, setSelectedArea] = useState("todas");
   const [period, setPeriod] = useState("semanal");
   const [dashboardData, setDashboardData] = useState(EMPTY_ADMIN_DASHBOARD_DATA);
+  const [estadisticasData, setEstadisticasData] = useState(EMPTY_ESTADISTICAS_DASHBOARD_DATA);
   const [mapPoints, setMapPoints] = useState([]);
   const [mapLoading, setMapLoading] = useState(true);
   const [mapError, setMapError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [connectionStatus, setConnectionStatus] = useState(null); // null | 'connected' | 'error'
+  const [statsConnectionStatus, setStatsConnectionStatus] = useState(null);
 
   const displayName = profile?.nombre || user?.email || "usuario";
   const isPlaceholderMode = dashboardData.isUsingPlaceholder;
+  const isStatsPlaceholderMode = estadisticasData.isUsingPlaceholder;
 
   useEffect(() => {
     let isMounted = true;
@@ -88,6 +96,49 @@ export default function AdminPage() {
       isMounted = false;
     };
   }, [user]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadEstadisticas() {
+      if (!user) {
+        setEstadisticasData(EMPTY_ESTADISTICAS_DASHBOARD_DATA);
+        return;
+      }
+
+      try {
+        // Verificar conexión con el microservicio de estadísticas
+        const healthCheck = await checkStatisticsApiHealth();
+        if (!healthCheck.ok) {
+          console.warn("Advertencia de conexión estadísticas:", healthCheck.message);
+          setStatsConnectionStatus('error');
+        } else {
+          setStatsConnectionStatus('connected');
+        }
+
+        const data = await fetchEstadisticasDashboard({ periodo: period });
+        if (isMounted) {
+          setEstadisticasData(data);
+        }
+      } catch (err) {
+        console.error("Error cargando estadísticas:", err);
+        setStatsConnectionStatus('error');
+        if (isMounted) {
+          setEstadisticasData(EMPTY_ESTADISTICAS_DASHBOARD_DATA);
+        }
+      } finally {
+        if (isMounted) {
+          // No necesitamos un loading separado, usamos el general
+        }
+      }
+    }
+
+    loadEstadisticas();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user, period]);
 
   useEffect(() => {
     let isMounted = true;
@@ -339,6 +390,203 @@ export default function AdminPage() {
               loading={mapLoading}
               error={mapError}
             />
+          </section>
+
+          {/* Sección de Estadísticas Avanzadas */}
+          <section className={styles.statsSection}>
+            <div className={styles.statsHeader}>
+              <h2 className={styles.statsTitle}>Estadísticas Avanzadas</h2>
+              <p className={styles.statsSubtitle}>
+                {isStatsPlaceholderMode
+                  ? "Estas estadísticas usan placeholders mientras se integra el microservicio."
+                  : "Visualiza estadísticas avanzadas de todos los reportes de la plataforma."}
+              </p>
+              {statsConnectionStatus === 'connected' && !isStatsPlaceholderMode && (
+                <p style={{ color: '#2E7D32', fontSize: '0.85rem', marginTop: '0.5rem' }}>
+                  ✓ Conectado al microservicio de estadísticas
+                </p>
+              )}
+              {statsConnectionStatus === 'error' && (
+                <p style={{ color: '#C62828', fontSize: '0.85rem', marginTop: '0.5rem' }}>
+                  ⚠ Error de conexión con el microservicio de estadísticas
+                </p>
+              )}
+            </div>
+
+            {/* Métricas de estadísticas avanzadas */}
+            <div className={styles.advancedMetricsGrid}>
+              <MetricCard
+                title="Área más activa"
+                value={estadisticasData.areaMasActiva?.area || "--"}
+                helper={estadisticasData.areaMasActiva?.total ? `${estadisticasData.areaMasActiva.total} reportes activos` : "Sin datos"}
+                emphasis="warning"
+              />
+              <MetricCard
+                title="Tipo más frecuente"
+                value={estadisticasData.tipoMasFrecuente?.tipo || "--"}
+                helper={estadisticasData.tipoMasFrecuente?.area || "Sin datos"}
+                emphasis="primary"
+              />
+              <MetricCard
+                title="Reportes resueltos"
+                value={formatMetricValue(estadisticasData.tiposFrecuentes.reduce((sum, t) => sum + (t.total || 0), 0))}
+                helper="Última semana"
+                emphasis="success"
+              />
+              <MetricCard
+                title="Mes con más reportes"
+                value={estadisticasData.tendenciaMensual.length > 0 
+                  ? estadisticasData.tendenciaMensual.reduce((max, m) => m.total > max.total ? m : max).mes 
+                  : "--"}
+                helper="Últimos 6 meses"
+                emphasis="primary"
+              />
+            </div>
+
+            {/* Tipos más frecuentes y tendencia mensual */}
+            <div className={styles.advancedChartGrid}>
+              <article className={styles.advancedPanel}>
+                <h3 className={styles.advancedPanelTitle}>Tipos de reportes más frecuentes</h3>
+                <p className={styles.advancedPanelHint}>
+                  {estadisticasData.tiposFrecuentes.length > 0
+                    ? `${estadisticasData.tiposFrecuentes.length} tipos reportados esta semana`
+                    : "Última semana (placeholder)"}
+                </p>
+                {estadisticasData.tiposFrecuentes.length > 0 ? (
+                  <div className={styles.listContainer}>
+                    {estadisticasData.tiposFrecuentes.map((tipo, index) => (
+                      <div key={index} className={styles.listItem}>
+                        <span className={styles.listRank}>#{index + 1}</span>
+                        <div className={styles.listInfo}>
+                          <span className={styles.listType}>{tipo.tipo}</span>
+                          <span className={styles.listArea}>{tipo.area}</span>
+                        </div>
+                        <span className={styles.listTotal}>{tipo.total}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className={styles.placeholderBars}>
+                    <div className={styles.placeholderBar} style={{ width: '80%' }} />
+                    <div className={styles.placeholderBar} style={{ width: '65%' }} />
+                    <div className={styles.placeholderBar} style={{ width: '50%' }} />
+                    <div className={styles.placeholderBar} style={{ width: '40%' }} />
+                    <div className={styles.placeholderBar} style={{ width: '30%' }} />
+                  </div>
+                )}
+              </article>
+
+              <article className={styles.advancedPanel}>
+                <h3 className={styles.advancedPanelTitle}>Tendencia mensual</h3>
+                <p className={styles.advancedPanelHint}>
+                  {estadisticasData.tendenciaMensual.length > 0
+                    ? `${estadisticasData.tendenciaMensual.length} meses de datos`
+                    : "Últimos 6 meses (placeholder)"}
+                </p>
+                <div className={styles.fakeLineChart}>
+                  {estadisticasData.tendenciaMensual.length > 0 ? (
+                    estadisticasData.tendenciaMensual.map((item, index) => {
+                      const maxValue = Math.max(...estadisticasData.tendenciaMensual.map(m => m.total || 0), 1);
+                      const height = Math.max(((item.total || 0) / maxValue) * 100, 10);
+                      return (
+                        <span
+                          key={index}
+                          className={styles.bar}
+                          style={{ height: `${height}%` }}
+                          title={`${item.mes}: ${item.total} reportes`}
+                        />
+                      );
+                    })
+                  ) : (
+                    <>
+                      <span className={styles.bar} style={{ height: '45%' }} />
+                      <span className={styles.bar} style={{ height: '70%' }} />
+                      <span className={styles.bar} style={{ height: '55%' }} />
+                      <span className={styles.bar} style={{ height: '85%' }} />
+                      <span className={styles.bar} style={{ height: '60%' }} />
+                      <span className={styles.bar} style={{ height: '50%' }} />
+                    </>
+                  )}
+                </div>
+              </article>
+            </div>
+
+            {/* Procesos diarios (estadísticas) */}
+            <article className={styles.fullWidthPanel}>
+              <h3 className={styles.panelTitle}>Procesos diarios - Estadísticas</h3>
+              <p className={styles.panelHint}>
+                {estadisticasData.dailyProcesses.length > 0
+                  ? `${estadisticasData.dailyProcesses.length} días con actividad`
+                  : `Vista ${period} (placeholder)`}
+              </p>
+              <div className={styles.fakeLineChart}>
+                {estadisticasData.dailyProcesses.length > 0 ? (
+                  estadisticasData.dailyProcesses.slice(0, 14).map((item, index) => {
+                    const value = item.total || 0;
+                    const maxValue = Math.max(...estadisticasData.dailyProcesses.map(d => d.total || 0), 1);
+                    const height = Math.max((value / maxValue) * 100, 10);
+                    return (
+                      <span
+                        key={index}
+                        className={styles.bar}
+                        style={{ height: `${height}%` }}
+                        title={item.fecha || item.date}
+                      />
+                    );
+                  })
+                ) : (
+                  <>
+                    <span className={styles.bar} style={{ height: '45%' }} />
+                    <span className={styles.bar} style={{ height: '70%' }} />
+                    <span className={styles.bar} style={{ height: '55%' }} />
+                    <span className={styles.bar} style={{ height: '85%' }} />
+                    <span className={styles.bar} style={{ height: '60%' }} />
+                    <span className={styles.bar} style={{ height: '90%' }} />
+                    <span className={styles.bar} style={{ height: '75%' }} />
+                    <span className={styles.bar} style={{ height: '50%' }} />
+                    <span className={styles.bar} style={{ height: '65%' }} />
+                    <span className={styles.bar} style={{ height: '80%' }} />
+                    <span className={styles.bar} style={{ height: '95%' }} />
+                    <span className={styles.bar} style={{ height: '60%' }} />
+                    <span className={styles.bar} style={{ height: '70%' }} />
+                    <span className={styles.bar} style={{ height: '55%' }} />
+                  </>
+                )}
+              </div>
+            </article>
+
+            {/* Distribución por área */}
+            <article className={styles.areaPanel}>
+              <h3 className={styles.panelTitle}>Distribución por área</h3>
+              <p className={styles.panelHint}>
+                {estadisticasData.reportsByArea.length > 0
+                  ? `${estadisticasData.reportsByArea.length} áreas con reportes`
+                  : "Distribución por área (placeholder)"}
+              </p>
+              {estadisticasData.reportsByArea.length > 0 ? (
+                <div className={styles.areaGrid}>
+                  {estadisticasData.reportsByArea.map((area, index) => (
+                    <div key={index} className={styles.areaCard}>
+                      <span className={styles.areaName}>{area.area || area.areaNombre}</span>
+                      <div className={styles.areaBarContainer}>
+                        <div 
+                          className={styles.areaBar} 
+                          style={{ width: `${area.porcentaje || area.percentage || 0}%` }}
+                        />
+                      </div>
+                      <span className={styles.areaTotal}>{area.total || 0} reportes</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className={styles.placeholderAreaBars}>
+                  <div className={styles.placeholderAreaBar} style={{ width: '80%' }} />
+                  <div className={styles.placeholderAreaBar} style={{ width: '65%' }} />
+                  <div className={styles.placeholderAreaBar} style={{ width: '50%' }} />
+                  <div className={styles.placeholderAreaBar} style={{ width: '35%' }} />
+                </div>
+              )}
+            </article>
           </section>
 
           <AppFooter />

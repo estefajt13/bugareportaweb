@@ -10,11 +10,10 @@ import styles from "./AdminShell.module.css";
 
 const NAV_ITEMS = [
   { id: "dashboard", label: "Dashboard", href: "/admin", icon: "▦" },
-  { id: "estadisticas", label: "Estadísticas", href: "/admin/estadisticas", icon: "📊" },
   { id: "perfil", label: "Mi perfil", href: "/admin/perfil", icon: "◍" },
   { id: "crear-usuario", label: "Crear usuario", href: "/admin/crear-usuario", icon: "+" },
   { id: "gestionar-funcionarios", label: "Gestionar funcionarios", href: "/admin/gestionar-funcionarios", icon: "◉" },
-    { id: "reportes", label: "Reportes", href: "/admin/reportes", icon: "◷", disabled: false },
+  { id: "reportes", label: "Reportes", href: "/admin/reportes", icon: "◷", disabled: false },
   { id: "mapa", label: "Mapa", href: "", icon: "⌖", disabled: true },
   { id: "config", label: "Configuracion", href: "", icon: "⚙", disabled: true },
 ];

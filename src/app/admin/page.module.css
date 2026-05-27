@@ -525,3 +525,258 @@
   color: #8f4a0f;
   font-weight: 700;
 }
+
+/* ==========================================
+   ESTILOS PARA ESTADÍSTICAS AVANZADAS
+   ========================================== */
+
+.statsSection {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.statsHeader {
+  background: linear-gradient(135deg, #c66c1e 0%, #e8a854 100%);
+  color: #fff;
+  padding: 24px 28px;
+  border-radius: 16px;
+  box-shadow: 0 6px 20px rgba(198, 108, 30, 0.3);
+}
+
+.statsTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+  color: #fff;
+}
+
+.statsSubtitle {
+  font-size: 1rem;
+  opacity: 0.95;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.advancedMetricsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.advancedChartGrid {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 12px;
+}
+
+.advancedPanel {
+  background: linear-gradient(180deg, #ffffff 0%, #fffbf8 100%);
+  border: 2px solid #e8d5c0;
+  box-shadow: 0 18px 32px rgba(63, 44, 20, 0.13);
+  padding: 24px;
+  border-radius: 22px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.advancedPanel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, rgba(201, 133, 31, 0.3), transparent);
+}
+
+.advancedPanel:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 24px 40px rgba(63, 44, 20, 0.18), 0 0 0 1px rgba(224, 197, 164, 0.3);
+}
+
+.advancedPanelTitle {
+  color: #2d1f0e;
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem 0;
+}
+
+.advancedPanelHint {
+  color: #6b5a45;
+  font-size: 0.85rem;
+  margin: 0 0 1rem 0;
+}
+
+/* Lista de tipos frecuentes */
+.listContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 12px;
+}
+
+.listItem {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: #f9f9f9;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.listItem:hover {
+  background: #f0f0f0;
+}
+
+.listRank {
+  font-weight: 700;
+  color: #c66c1e;
+  font-size: 1rem;
+  min-width: 30px;
+}
+
+.listInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.listType {
+  font-weight: 500;
+  color: #333;
+  font-size: 0.95rem;
+}
+
+.listArea {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.listTotal {
+  font-weight: 600;
+  color: #c66c1e;
+  font-size: 1rem;
+  min-width: 40px;
+  text-align: right;
+}
+
+/* Placeholder bars */
+.placeholderBars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 12px;
+}
+
+.placeholderBar {
+  height: 24px;
+  background: linear-gradient(90deg, #f0f0f0, #e0e0e0);
+  border-radius: 6px;
+  animation: pulse 2s infinite;
+}
+
+/* Distribución por área */
+.areaGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 12px;
+}
+
+.areaCard {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: #f9f9f9;
+  border-radius: 8px;
+}
+
+.areaName {
+  font-weight: 500;
+  color: #333;
+  min-width: 150px;
+  font-size: 0.9rem;
+}
+
+.areaBarContainer {
+  flex: 1;
+  height: 20px;
+  background: #e0e0e0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.areaBar {
+  height: 100%;
+  background: linear-gradient(90deg, #c66c1e, #f2bc85);
+  border-radius: 10px;
+  transition: width 0.5s ease;
+}
+
+.areaTotal {
+  font-weight: 600;
+  color: #666;
+  min-width: 80px;
+  text-align: right;
+  font-size: 0.9rem;
+}
+
+.placeholderAreaBars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 12px;
+}
+
+.placeholderAreaBar {
+  height: 36px;
+  background: linear-gradient(90deg, #f0f0f0, #e0e0e0);
+  border-radius: 6px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* Responsive para estadísticas avanzadas */
+@media (max-width: 1080px) {
+  .advancedMetricsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .advancedChartGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .advancedMetricsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .statsHeader {
+    padding: 20px;
+  }
+
+  .statsTitle {
+    font-size: 1.3rem;
+  }
+
+  .areaName {
+    min-width: 100px;
+    font-size: 0.8rem;
+  }
+
+  .areaTotal {
+    min-width: 60px;
+    font-size: 0.8rem;
+  }
+}
