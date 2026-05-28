@@ -3,7 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { AdminGuard } from "@/features/auth/auth-guard";
 import { useAuth } from "@/features/auth/auth-context";
-import { fetchAdminDashboardData, checkApiHealth } from "@/features/reports/reports-api";
+import {
+  fetchAdminDashboardData,
+  checkApiHealth,
+} from "@/features/reports/reports-api";
 import {
   fetchEstadisticasDashboard,
   checkStatisticsApiHealth,
@@ -21,13 +24,12 @@ function formatMetricValue(value, suffix = "") {
   if (value === null || value === undefined || Number.isNaN(Number(value))) {
     return "--";
   }
-  // Redondear a 2 decimales si es un número con muchos decimales
+
   const numValue = Number(value);
   const formatted = Number.isInteger(numValue) ? numValue : Math.round(numValue * 100) / 100;
   return `${formatted}${suffix}`;
 }
 
-// Colores para la leyenda del donut
 const legendColors = ["#c66c1e", "#f2bc85", "#f7dfc4", "#e8a854"];
 
 export default function AdminPage() {
@@ -42,7 +44,7 @@ export default function AdminPage() {
   const [mapError, setMapError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
-  const [connectionStatus, setConnectionStatus] = useState(null); // null | 'connected' | 'error'
+  const [connectionStatus, setConnectionStatus] = useState(null);
   const [statsConnectionStatus, setStatsConnectionStatus] = useState(null);
 
   const displayName = profile?.nombre || user?.email || "usuario";
@@ -62,23 +64,26 @@ export default function AdminPage() {
       setLoadError("");
 
       try {
-        // Verificar conexión con el microservicio
         const healthCheck = await checkApiHealth();
         if (!healthCheck.ok) {
           console.warn("Advertencia de conexión:", healthCheck.message);
-          setConnectionStatus('error');
+          setConnectionStatus("error");
         } else {
-          setConnectionStatus('connected');
+          setConnectionStatus("connected");
         }
 
         const token = await user.getIdToken();
         const data = await fetchAdminDashboardData(token);
-        if (isMounted) {
-          setDashboardData(data);
+
+        if (!isMounted) {
+          return;
         }
+
+        setDashboardData(data);
+
       } catch (err) {
         console.error("Error cargando dashboard:", err);
-        setConnectionStatus('error');
+        setConnectionStatus("error");
         if (isMounted) {
           setDashboardData(EMPTY_ADMIN_DASHBOARD_DATA);
           setLoadError("No fue posible consultar reportes. Verifica la conexión con el microservicio.");
@@ -185,6 +190,7 @@ export default function AdminPage() {
     if (!dashboardData.reportsByArea.length) {
       return null;
     }
+
     return dashboardData.reportsByArea[0]?.percentage ?? null;
   }, [dashboardData.reportsByArea]);
 
@@ -247,13 +253,13 @@ export default function AdminPage() {
             </p>
             {isLoading ? <p className={styles.info}>Cargando datos...</p> : null}
             {loadError ? <p className={styles.error}>{loadError}</p> : null}
-            {connectionStatus === 'connected' && !isPlaceholderMode && (
-              <p style={{ color: '#2E7D32', fontSize: '0.85rem', marginTop: '0.5rem' }}>
+            {connectionStatus === "connected" && !isPlaceholderMode && (
+              <p style={{ color: "#2E7D32", fontSize: "0.85rem", marginTop: "0.5rem" }}>
                 ✓ Conectado al microservicio de reportes
               </p>
             )}
-            {connectionStatus === 'error' && (
-              <p style={{ color: '#C62828', fontSize: '0.85rem', marginTop: '0.5rem' }}>
+            {connectionStatus === "error" && (
+              <p style={{ color: "#C62828", fontSize: "0.85rem", marginTop: "0.5rem" }}>
                 ⚠ Error de conexión con el microservicio
               </p>
             )}
@@ -286,10 +292,7 @@ export default function AdminPage() {
             />
             <MetricCard
               title="Tiempo promedio de resolucion"
-              value={formatMetricValue(
-                dashboardData.metrics.averageResolutionHours,
-                " h"
-              )}
+              value={formatMetricValue(dashboardData.metrics.averageResolutionHours, " h")}
               helper={isPlaceholderMode ? "Dato pendiente" : "Conectado"}
               trend="-6.7% vs semana anterior"
               trendDirection="down"
@@ -308,10 +311,13 @@ export default function AdminPage() {
               <div className={styles.fakeLineChart}>
                 {dashboardData.dailyProcesses.length > 0 ? (
                   dashboardData.dailyProcesses.slice(0, 12).map((item, index) => {
-                    // El backend puede devolver "date" o "fecha", "total" o "creados"
                     const value = item.total ?? item.creados ?? 0;
-                    const maxValue = Math.max(...dashboardData.dailyProcesses.map(d => d.total ?? d.creados ?? 0), 1);
+                    const maxValue = Math.max(
+                      ...dashboardData.dailyProcesses.map((dailyItem) => dailyItem.total ?? dailyItem.creados ?? 0),
+                      1
+                    );
                     const height = Math.max((value / maxValue) * 100, 10);
+
                     return (
                       <span
                         key={index}
@@ -322,20 +328,19 @@ export default function AdminPage() {
                     );
                   })
                 ) : (
-                  // Placeholder bars
                   <>
-                    <span className={styles.bar} style={{ height: '45%' }} />
-                    <span className={styles.bar} style={{ height: '70%' }} />
-                    <span className={styles.bar} style={{ height: '55%' }} />
-                    <span className={styles.bar} style={{ height: '85%' }} />
-                    <span className={styles.bar} style={{ height: '60%' }} />
-                    <span className={styles.bar} style={{ height: '90%' }} />
-                    <span className={styles.bar} style={{ height: '75%' }} />
-                    <span className={styles.bar} style={{ height: '50%' }} />
-                    <span className={styles.bar} style={{ height: '65%' }} />
-                    <span className={styles.bar} style={{ height: '80%' }} />
-                    <span className={styles.bar} style={{ height: '95%' }} />
-                    <span className={styles.bar} style={{ height: '60%' }} />
+                    <span className={styles.bar} style={{ height: "45%" }} />
+                    <span className={styles.bar} style={{ height: "70%" }} />
+                    <span className={styles.bar} style={{ height: "55%" }} />
+                    <span className={styles.bar} style={{ height: "85%" }} />
+                    <span className={styles.bar} style={{ height: "60%" }} />
+                    <span className={styles.bar} style={{ height: "90%" }} />
+                    <span className={styles.bar} style={{ height: "75%" }} />
+                    <span className={styles.bar} style={{ height: "50%" }} />
+                    <span className={styles.bar} style={{ height: "65%" }} />
+                    <span className={styles.bar} style={{ height: "80%" }} />
+                    <span className={styles.bar} style={{ height: "95%" }} />
+                    <span className={styles.bar} style={{ height: "60%" }} />
                   </>
                 )}
               </div>
@@ -349,24 +354,15 @@ export default function AdminPage() {
                   : "Porcentaje por categoria (placeholder)"}
               </p>
               <div className={styles.fakeDonut}>
-                <div className={styles.donutCenter}>
-                  {formatMetricValue(areaTopPercentage, "%")}
-                </div>
+                <div className={styles.donutCenter}>{formatMetricValue(areaTopPercentage, "%")}</div>
               </div>
               {dashboardData.reportsByArea.length > 0 && (
                 <div className={styles.legendContainer}>
                   {dashboardData.reportsByArea.slice(0, 4).map((area, index) => (
                     <div key={index} className={styles.legendItem}>
-                      <span 
-                        className={styles.legendDot} 
-                        style={{ backgroundColor: legendColors[index] }}
-                      />
-                      <span className={styles.legendLabel}>
-                        {area.name || area.areaNombre}
-                      </span>
-                      <span className={styles.legendValue}>
-                        {area.total ?? 0}
-                      </span>
+                      <span className={styles.legendDot} style={{ backgroundColor: legendColors[index] }} />
+                      <span className={styles.legendLabel}>{area.name || area.areaNombre}</span>
+                      <span className={styles.legendValue}>{area.total ?? 0}</span>
                     </div>
                   ))}
                 </div>

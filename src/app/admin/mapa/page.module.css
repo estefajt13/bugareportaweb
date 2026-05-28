@@ -1,0 +1,46 @@
+.page {
+  min-height: 100%;
+}
+
+.filtersBar {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.filterLabel {
+  display: grid;
+  gap: 0.35rem;
+  color: #5c4a38;
+  font-size: 0.9rem;
+}
+
+.select {
+  border: 1px solid #d9c8b4;
+  border-radius: 10px;
+  padding: 0.5rem 0.7rem;
+  background: #fff;
+  color: #402f1f;
+}
+
+.mapPanel {
+  background: #fff;
+  border: 1px solid #eadccc;
+  border-radius: 14px;
+  padding: 1rem;
+}
+
+.mapHeader {
+  margin-bottom: 0.8rem;
+}
+
+.title {
+  margin: 0;
+  color: #2f2418;
+  font-size: 1.25rem;
+}
+
+.subtitle {
+  margin: 0.25rem 0 0;
+  color: #6d5a45;
+}

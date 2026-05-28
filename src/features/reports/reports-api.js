@@ -111,14 +111,42 @@ export async function fetchAdminDashboardData(token) {
 }
 
 /**
+ * Obtener todos los tipos de reporte disponibles.
+ * @param {string} token
+ * @returns {Promise<Array<{id: number, nombre: string, icono?: string, area?: {nombre?: string}}>>}
+ */
+export async function fetchTiposReporte(token) {
+  if (!hasApiConfigured()) {
+    return [];
+  }
+
+  const response = await fetch(`${BASE_URL}/tipos-reporte`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Error ${response.status}: ${errorText}`);
+  }
+
+  return response.json();
+}
+
+/**
  * Obtener puntos para el mapa admin con filtros por estado y area.
  * @param {string} token
- * @param {{estado?: string, area?: string}} filters
+ * @param {{estado?: string, area?: string, tipoReporte?: string}} filters
  */
 export async function fetchAdminMapPoints(token, filters = {}) {
   const params = new URLSearchParams();
   if (filters.estado && filters.estado !== "todos") params.append("estado", filters.estado);
   if (filters.area && filters.area !== "todas") params.append("area", filters.area);
+  if (filters.tipoReporte && filters.tipoReporte !== "todos") params.append("tipoReporte", filters.tipoReporte);
 
   const queryString = params.toString();
   const path = `${REPORTS_ENDPOINTS.mapData}${queryString ? `?${queryString}` : ""}`;

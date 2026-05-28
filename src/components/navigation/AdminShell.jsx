@@ -8,7 +8,7 @@ import { useAuth } from "@/features/auth/auth-context";
 import { logoutUser } from "@/features/auth/auth-service";
 import styles from "./AdminShell.module.css";
 
-  const NAV_ITEMS = [
+const NAV_ITEMS = [
   {
     section: "Principal",
     items: [
@@ -27,7 +27,7 @@ import styles from "./AdminShell.module.css";
   {
     section: "Próximamente",
     items: [
-      { id: "mapa", label: "Mapa", href: "", icon: "ti-map", disabled: true },
+      { id: "mapa", label: "Mapa", href: "/admin/mapa", icon: "ti-map", disabled: false },
       { id: "config", label: "Configuración", href: "", icon: "ti-settings", disabled: true },
     ],
   },

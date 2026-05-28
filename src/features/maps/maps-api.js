@@ -40,18 +40,47 @@ function featureToPoint(feature) {
   };
 }
 
+function featureToHeatPoint(feature) {
+  const coordinates = feature?.geometry?.coordinates || [];
+  const props = feature?.properties || {};
+
+  return {
+    id: String(props.id ?? crypto.randomUUID()),
+    lat: Number(coordinates[1]),
+    lng: Number(coordinates[0]),
+    weight: Number(props.weight ?? 1),
+  };
+}
+
 /**
  * Obtiene los puntos de mapa ya resueltos por el microservicio de mapas.
- * @param {{area?: string, estado?: string}} filters
+ * @param {{area?: string, estado?: string, tipoReporte?: string}} filters
  */
 export async function fetchMapPoints(filters = {}) {
   const params = new URLSearchParams();
   if (filters.area && filters.area !== "todas") params.append("area", filters.area);
   if (filters.estado && filters.estado !== "todos") params.append("estado", filters.estado);
+  if (filters.tipoReporte && filters.tipoReporte !== "todos") params.append("tipoReporte", filters.tipoReporte);
 
   const queryString = params.toString();
   const payload = await request(`/api/mapas/reportes${queryString ? `?${queryString}` : ""}`);
 
   const features = Array.isArray(payload?.features) ? payload.features : [];
   return features.map(featureToPoint);
+}
+
+/**
+ * Obtiene puntos para renderizar un mapa de calor.
+ * @param {{area?: string, tipoReporte?: string}} filters
+ */
+export async function fetchHeatmapPoints(filters = {}) {
+  const params = new URLSearchParams();
+  if (filters.area && filters.area !== "todas") params.append("area", filters.area);
+  if (filters.tipoReporte && filters.tipoReporte !== "todos") params.append("tipoReporte", filters.tipoReporte);
+
+  const queryString = params.toString();
+  const payload = await request(`/api/mapas/calor${queryString ? `?${queryString}` : ""}`);
+
+  const features = Array.isArray(payload?.features) ? payload.features : [];
+  return features.map(featureToHeatPoint);
 }

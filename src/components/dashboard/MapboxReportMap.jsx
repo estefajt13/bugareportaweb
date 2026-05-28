@@ -5,6 +5,9 @@ import styles from "./MapboxReportMap.module.css";
 
 const DEFAULT_CENTER = [-76.29, 3.88];
 const DEFAULT_ZOOM = 12;
+const HEAT_SOURCE_ID = "reports-heat-source";
+const HEAT_LAYER_ID = "reports-heat-layer";
+const HEAT_POINT_LAYER_ID = "reports-heat-point-layer";
 
 function isValidPoint(point) {
   return Number.isFinite(Number(point?.lat)) && Number.isFinite(Number(point?.lng));
@@ -31,7 +34,13 @@ function buildBounds(points) {
   return bounds;
 }
 
-export default function MapboxReportMap({ accessToken, points, loading = false, error = "" }) {
+export default function MapboxReportMap({
+  accessToken,
+  points,
+  loading = false,
+  error = "",
+  mode = "markers",
+}) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const markersRef = useRef([]);
@@ -68,7 +77,27 @@ export default function MapboxReportMap({ accessToken, points, loading = false, 
         });
       }
 
-      syncMarkers(mapboxgl);
+      if (mapRef.current.loaded()) {
+        setMapReady(true);
+      }
+
+      const applyMapData = () => {
+        if (cancelled || !mapRef.current) {
+          return;
+        }
+
+        if (mode === "heatmap") {
+          syncHeatmap();
+        } else {
+          syncMarkers(mapboxgl);
+        }
+      };
+
+      if (mapRef.current.loaded()) {
+        applyMapData();
+      } else {
+        mapRef.current.once("load", applyMapData);
+      }
     }
 
     function clearMarkers() {
@@ -76,12 +105,20 @@ export default function MapboxReportMap({ accessToken, points, loading = false, 
       markersRef.current = [];
     }
 
+    function clearHeatLayers() {
+      const map = mapRef.current;
+      if (!map) return;
+
+      if (map.getLayer(HEAT_POINT_LAYER_ID)) map.removeLayer(HEAT_POINT_LAYER_ID);
+      if (map.getLayer(HEAT_LAYER_ID)) map.removeLayer(HEAT_LAYER_ID);
+      if (map.getSource(HEAT_SOURCE_ID)) map.removeSource(HEAT_SOURCE_ID);
+    }
+
     function syncMarkers(mapboxgl) {
       const map = mapRef.current;
-      if (!map) {
-        return;
-      }
+      if (!map) return;
 
+      clearHeatLayers();
       clearMarkers();
 
       validPoints.forEach((point) => {
@@ -117,13 +154,88 @@ export default function MapboxReportMap({ accessToken, points, loading = false, 
       }
     }
 
+    function syncHeatmap() {
+      const map = mapRef.current;
+      if (!map) return;
+
+      clearMarkers();
+      clearHeatLayers();
+
+      const features = validPoints.map((point) => ({
+        type: "Feature",
+        geometry: {
+          type: "Point",
+          coordinates: [Number(point.lng), Number(point.lat)],
+        },
+        properties: {
+          weight: Number(point.weight ?? 1),
+        },
+      }));
+
+      map.addSource(HEAT_SOURCE_ID, {
+        type: "geojson",
+        data: {
+          type: "FeatureCollection",
+          features,
+        },
+      });
+
+      map.addLayer({
+        id: HEAT_LAYER_ID,
+        type: "heatmap",
+        source: HEAT_SOURCE_ID,
+        maxzoom: 16,
+        paint: {
+          "heatmap-weight": ["interpolate", ["linear"], ["get", "weight"], 0, 0, 6, 1],
+          "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 0, 1, 12, 3],
+          "heatmap-color": [
+            "interpolate",
+            ["linear"],
+            ["heatmap-density"],
+            0,
+            "rgba(33,102,172,0)",
+            0.2,
+            "rgb(103,169,207)",
+            0.4,
+            "rgb(209,229,240)",
+            0.6,
+            "rgb(253,219,199)",
+            0.8,
+            "rgb(239,138,98)",
+            1,
+            "rgb(178,24,43)",
+          ],
+          "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 0, 8, 12, 20, 16, 30],
+          "heatmap-opacity": ["interpolate", ["linear"], ["zoom"], 10, 1, 16, 0.3],
+        },
+      });
+
+      map.addLayer({
+        id: HEAT_POINT_LAYER_ID,
+        type: "circle",
+        source: HEAT_SOURCE_ID,
+        minzoom: 14,
+        paint: {
+          "circle-radius": ["interpolate", ["linear"], ["zoom"], 14, 3, 18, 6],
+          "circle-color": "#8c2d04",
+          "circle-opacity": 0.65,
+        },
+      });
+
+      const bounds = buildBounds(validPoints);
+      if (bounds) {
+        map.fitBounds(bounds, { padding: 60, maxZoom: 15, duration: 0 });
+      }
+    }
+
     initializeMap();
 
     return () => {
       cancelled = true;
       clearMarkers();
+      clearHeatLayers();
     };
-  }, [accessToken, validPoints]);
+  }, [accessToken, mode, validPoints]);
 
   if (!accessToken) {
     return <div className={styles.emptyState}>Falta configurar `NEXT_PUBLIC_MAPBOX_TOKEN`.</div>;
@@ -140,10 +252,17 @@ export default function MapboxReportMap({ accessToken, points, loading = false, 
       {error ? <div className={styles.errorState}>{error}</div> : null}
       {loading ? <div className={styles.loadingState}>Actualizando puntos...</div> : null}
 
-      <div className={styles.legend}>
-        <span className={styles.legendItem}><span className={styles.legendDotCluster} /> Cluster</span>
-        <span className={styles.legendItem}><span className={styles.legendDotReport} /> Reporte</span>
-      </div>
+      {mode === "heatmap" ? (
+        <div className={styles.legend}>
+          <span className={styles.legendItem}>Baja densidad</span>
+          <span className={styles.legendItem}>Alta densidad</span>
+        </div>
+      ) : (
+        <div className={styles.legend}>
+          <span className={styles.legendItem}><span className={styles.legendDotCluster} /> Cluster</span>
+          <span className={styles.legendItem}><span className={styles.legendDotReport} /> Reporte</span>
+        </div>
+      )}
     </div>
   );
 }
