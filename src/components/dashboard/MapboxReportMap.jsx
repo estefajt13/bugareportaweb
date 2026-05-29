@@ -93,10 +93,26 @@ export default function MapboxReportMap({
         }
       };
 
-      if (mapRef.current.loaded()) {
+      let applied = false;
+      const applyMapDataOnce = () => {
+        if (applied || cancelled) {
+          return;
+        }
+
+        applied = true;
         applyMapData();
+      };
+
+      if (mapRef.current.loaded()) {
+        applyMapDataOnce();
       } else {
-        mapRef.current.once("load", applyMapData);
+        mapRef.current.once("load", applyMapDataOnce);
+
+        requestAnimationFrame(() => {
+          if (!applied && !cancelled && mapRef.current?.loaded()) {
+            applyMapDataOnce();
+          }
+        });
       }
     }
 
