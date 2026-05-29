@@ -28,7 +28,7 @@ export default function AdminMapaPage() {
       setMapError("");
 
       try {
-        const points = await fetchHeatmapPoints({ tipoReporte: "hurto" });
+        const points = await fetchHeatmapPoints();
 
         if (isMounted) {
           setHeatmapPoints(points);
@@ -37,7 +37,7 @@ export default function AdminMapaPage() {
         console.error("Error cargando mapa de calor:", error);
         if (isMounted) {
           setHeatmapPoints([]);
-          setMapError("No se pudo cargar el mapa de calor de hurtos.");
+          setMapError("No se pudo cargar el mapa de calor de reportes.");
         }
       } finally {
         if (isMounted) {
@@ -59,9 +59,9 @@ export default function AdminMapaPage() {
         <AdminShell activeSection="mapa" breadcrumb="Admin / Mapa de calor">
           <section className={styles.mapPanel}>
             <div className={styles.mapHeader}>
-              <h1 className={styles.title}>Mapa de calor de hurtos</h1>
+              <h1 className={styles.title}>Mapa de calor de reportes</h1>
               <p className={styles.subtitle}>
-                Visualiza zonas con mayor concentración de hurtos para priorizar vigilancia.
+                Visualiza zonas con mayor concentración de reportes para priorizar vigilancia.
               </p>
             </div>
 

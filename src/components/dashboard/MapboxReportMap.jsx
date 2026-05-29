@@ -49,93 +49,131 @@ export default function MapboxReportMap({
   const validPoints = useMemo(() => (Array.isArray(points) ? points.filter(isValidPoint) : []), [points]);
 
   useEffect(() => {
-    let cancelled = false;
-
     async function initializeMap() {
-      if (!containerRef.current || !accessToken) {
+      if (!containerRef.current || !accessToken || mapRef.current) {
         return;
       }
 
       const { default: mapboxgl } = await import("mapbox-gl");
       mapboxgl.accessToken = accessToken;
 
-      if (!mapRef.current) {
-        mapRef.current = new mapboxgl.Map({
-          container: containerRef.current,
-          style: "mapbox://styles/mapbox/light-v11",
-          center: DEFAULT_CENTER,
-          zoom: DEFAULT_ZOOM,
-          attributionControl: false,
-        });
+      const map = new mapboxgl.Map({
+        container: containerRef.current,
+        style: "mapbox://styles/mapbox/light-v11",
+        center: DEFAULT_CENTER,
+        zoom: DEFAULT_ZOOM,
+        attributionControl: false,
+      });
 
-        mapRef.current.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
+      map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
+      mapRef.current = map;
 
-        mapRef.current.on("load", () => {
-          if (!cancelled) {
-            setMapReady(true);
-          }
-        });
-      }
+      map.on("load", () => {
+        setMapReady(true);
+      });
 
-      if (mapRef.current.loaded()) {
+      if (map.loaded()) {
         setMapReady(true);
       }
-
-      const applyMapData = () => {
-        if (cancelled || !mapRef.current) {
-          return;
-        }
-
-        if (mode === "heatmap") {
-          syncHeatmap();
-        } else {
-          syncMarkers(mapboxgl);
-        }
-      };
-
-      let applied = false;
-      const applyMapDataOnce = () => {
-        if (applied || cancelled) {
-          return;
-        }
-
-        applied = true;
-        applyMapData();
-      };
-
-      if (mapRef.current.loaded()) {
-        applyMapDataOnce();
-      } else {
-        mapRef.current.once("load", applyMapDataOnce);
-
-        requestAnimationFrame(() => {
-          if (!applied && !cancelled && mapRef.current?.loaded()) {
-            applyMapDataOnce();
-          }
-        });
-      }
     }
 
-    function clearMarkers() {
+    initializeMap();
+
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+      markersRef.current = [];
+      setMapReady(false);
+    };
+  }, [accessToken]);
+
+  useEffect(() => {
+    async function syncMapData() {
+      if (!mapRef.current || !mapReady) {
+        return;
+      }
+
+      const { default: mapboxgl } = await import("mapbox-gl");
+
+      const map = mapRef.current;
+
       markersRef.current.forEach((marker) => marker.remove());
       markersRef.current = [];
-    }
-
-    function clearHeatLayers() {
-      const map = mapRef.current;
-      if (!map) return;
 
       if (map.getLayer(HEAT_POINT_LAYER_ID)) map.removeLayer(HEAT_POINT_LAYER_ID);
       if (map.getLayer(HEAT_LAYER_ID)) map.removeLayer(HEAT_LAYER_ID);
       if (map.getSource(HEAT_SOURCE_ID)) map.removeSource(HEAT_SOURCE_ID);
-    }
 
-    function syncMarkers(mapboxgl) {
-      const map = mapRef.current;
-      if (!map) return;
+      if (mode === "heatmap") {
+        const features = validPoints.map((point) => ({
+          type: "Feature",
+          geometry: {
+            type: "Point",
+            coordinates: [Number(point.lng), Number(point.lat)],
+          },
+          properties: {
+            weight: Number(point.weight ?? 1),
+          },
+        }));
 
-      clearHeatLayers();
-      clearMarkers();
+        map.addSource(HEAT_SOURCE_ID, {
+          type: "geojson",
+          data: {
+            type: "FeatureCollection",
+            features,
+          },
+        });
+
+        map.addLayer({
+          id: HEAT_LAYER_ID,
+          type: "heatmap",
+          source: HEAT_SOURCE_ID,
+          maxzoom: 16,
+          paint: {
+            "heatmap-weight": ["interpolate", ["linear"], ["get", "weight"], 0, 0, 6, 1],
+            "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 0, 2, 12, 6],
+            "heatmap-color": [
+              "interpolate",
+              ["linear"],
+              ["heatmap-density"],
+              0,
+              "rgba(33,102,172,0)",
+              0.2,
+              "rgb(103,169,207)",
+              0.4,
+              "rgb(209,229,240)",
+              0.6,
+              "rgb(253,219,199)",
+              0.8,
+              "rgb(239,138,98)",
+              1,
+              "rgb(178,24,43)",
+            ],
+            "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 0, 16, 12, 32, 16, 48],
+            "heatmap-opacity": ["interpolate", ["linear"], ["zoom"], 10, 0.95, 16, 0.45],
+          },
+        });
+
+        map.addLayer({
+          id: HEAT_POINT_LAYER_ID,
+          type: "circle",
+          source: HEAT_SOURCE_ID,
+          minzoom: 0,
+          paint: {
+            "circle-radius": ["interpolate", ["linear"], ["zoom"], 0, 3, 12, 6, 18, 10],
+            "circle-color": "#8c2d04",
+            "circle-opacity": 0.7,
+          },
+        });
+
+        const bounds = buildBounds(validPoints);
+        if (bounds) {
+          map.fitBounds(bounds, { padding: 60, maxZoom: 15, duration: 0 });
+        }
+        return;
+      }
 
       validPoints.forEach((point) => {
         const element = document.createElement("div");
@@ -170,88 +208,10 @@ export default function MapboxReportMap({
       }
     }
 
-    function syncHeatmap() {
-      const map = mapRef.current;
-      if (!map) return;
-
-      clearMarkers();
-      clearHeatLayers();
-
-      const features = validPoints.map((point) => ({
-        type: "Feature",
-        geometry: {
-          type: "Point",
-          coordinates: [Number(point.lng), Number(point.lat)],
-        },
-        properties: {
-          weight: Number(point.weight ?? 1),
-        },
-      }));
-
-      map.addSource(HEAT_SOURCE_ID, {
-        type: "geojson",
-        data: {
-          type: "FeatureCollection",
-          features,
-        },
-      });
-
-      map.addLayer({
-        id: HEAT_LAYER_ID,
-        type: "heatmap",
-        source: HEAT_SOURCE_ID,
-        maxzoom: 16,
-        paint: {
-          "heatmap-weight": ["interpolate", ["linear"], ["get", "weight"], 0, 0, 6, 1],
-          "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 0, 1.5, 12, 4],
-          "heatmap-color": [
-            "interpolate",
-            ["linear"],
-            ["heatmap-density"],
-            0,
-            "rgba(33,102,172,0)",
-            0.2,
-            "rgb(103,169,207)",
-            0.4,
-            "rgb(209,229,240)",
-            0.6,
-            "rgb(253,219,199)",
-            0.8,
-            "rgb(239,138,98)",
-            1,
-            "rgb(178,24,43)",
-          ],
-          "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 0, 12, 12, 28, 16, 42],
-          "heatmap-opacity": ["interpolate", ["linear"], ["zoom"], 10, 1, 16, 0.3],
-        },
-      });
-
-      map.addLayer({
-        id: HEAT_POINT_LAYER_ID,
-        type: "circle",
-        source: HEAT_SOURCE_ID,
-        minzoom: 0,
-        paint: {
-          "circle-radius": ["interpolate", ["linear"], ["zoom"], 0, 2, 12, 4, 18, 8],
-          "circle-color": "#8c2d04",
-          "circle-opacity": 0.35,
-        },
-      });
-
-      const bounds = buildBounds(validPoints);
-      if (bounds) {
-        map.fitBounds(bounds, { padding: 60, maxZoom: 15, duration: 0 });
-      }
-    }
-
-    initializeMap();
-
-    return () => {
-      cancelled = true;
-      clearMarkers();
-      clearHeatLayers();
-    };
-  }, [accessToken, mode, validPoints]);
+    syncMapData().catch((error) => {
+      console.error("[Mapa componente] error al sincronizar datos", error);
+    });
+  }, [mapReady, mode, validPoints]);
 
   if (!accessToken) {
     return <div className={styles.emptyState}>Falta configurar `NEXT_PUBLIC_MAPBOX_TOKEN`.</div>;
@@ -260,10 +220,6 @@ export default function MapboxReportMap({
   return (
     <div className={styles.wrapper}>
       <div ref={containerRef} className={styles.mapContainer} />
-
-      {!mapReady && !error && (
-        <div className={styles.overlay}>Cargando mapa...</div>
-      )}
 
       {error ? <div className={styles.errorState}>{error}</div> : null}
       {loading ? <div className={styles.loadingState}>Actualizando puntos...</div> : null}
