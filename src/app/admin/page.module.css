@@ -32,12 +32,10 @@
 
 .welcomeCard {
   border-radius: 22px;
-  background: linear-gradient(135deg, #ffffff 0%, #fffbf5 50%, #fff8f0 100%);
+  background: #ffffff;
   padding: 28px 32px;
-  border: 2px solid #e8d5c0;
-  box-shadow: 
-    0 18px 32px rgba(63, 44, 20, 0.14),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  border: 1px solid #e8ddd4;
+  box-shadow: 0 4px 20px rgba(71, 49, 23, 0.08);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
@@ -48,11 +46,8 @@
 }
 
 .welcomeCard:hover {
-  transform: translateY(-4px);
-  box-shadow: 
-    0 24px 40px rgba(63, 44, 20, 0.18),
-    0 0 0 1px rgba(224, 197, 164, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(71, 49, 23, 0.12);
 }
 
 .filtersBar {
@@ -93,11 +88,10 @@
   min-height: 44px;
   border-radius: 10px;
   border: 2px solid #dcc2a1;
-  background: linear-gradient(180deg, #ffffff 0%, #fdf9f5 100%);
+  background: #ffffff;
   color: #4f391e;
   font-size: 0.9375rem;
   padding: 0 36px 0 14px;
-  transition: all 0.2s ease;
   cursor: pointer;
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238f4a0f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
@@ -105,17 +99,9 @@
   background-position: right 12px center;
 }
 
-.select:hover {
-  border-color: #b25e15;
-  background-color: #fffbf8;
-}
-
 .select:focus {
   outline: none;
   border-color: #b25e15;
-  box-shadow: 
-    0 0 0 3px rgba(178, 94, 21, 0.15),
-    0 2px 8px rgba(178, 94, 21, 0.1);
 }
 
 .title {
@@ -177,10 +163,96 @@
   }
 }
 
+.metricsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.metricsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.sectionTitle {
+  color: #3d2b16;
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+.periodFilter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #4f391e;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
 .metricsGrid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
+}
+
+/* Nuevas metric cards estilo AdminShell */
+.metricCard {
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid #e8ddd4;
+  box-shadow: 0 4px 20px rgba(71, 49, 23, 0.08);
+  padding: 20px 24px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.metricCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #E87722;
+}
+
+.metricCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(71, 49, 23, 0.12);
+}
+
+.metricWarning::before {
+  background: #F9A825;
+}
+
+.metricInfo::before {
+  background: #1565C0;
+}
+
+.metricSuccess::before {
+  background: #2E7D32;
+}
+
+.metricLabel {
+  color: #6b5a45;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.metricValue {
+  color: #2d1f0e;
+  font-size: 2rem;
+  font-weight: 800;
+  margin: 0;
+  line-height: 1.2;
 }
 
 .chartGrid {
@@ -192,9 +264,9 @@
 .panel,
 .mapPanel {
   border-radius: 22px;
-  background: linear-gradient(180deg, #ffffff 0%, #fffbf8 100%);
-  border: 2px solid #e8d5c0;
-  box-shadow: 0 18px 32px rgba(63, 44, 20, 0.13);
+  background: #ffffff;
+  border: 1px solid #e8ddd4;
+  box-shadow: 0 4px 20px rgba(71, 49, 23, 0.08);
   padding: 24px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
@@ -203,21 +275,13 @@
 
 .panel::before,
 .mapPanel::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, transparent, rgba(201, 133, 31, 0.3), transparent);
+  content: none;
 }
 
 .panel:hover,
 .mapPanel:hover {
-  transform: translateY(-4px);
-  box-shadow: 
-    0 24px 40px rgba(63, 44, 20, 0.18),
-    0 0 0 1px rgba(224, 197, 164, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(71, 49, 23, 0.12);
 }
 
 .panelTitle {
@@ -558,6 +622,45 @@
   gap: 12px;
 }
 
+/* Estilos específicos para métricas de estadísticas (colores distintos a los principales) */
+.statMetricCard {
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid #e8ddd4;
+  box-shadow: 0 4px 20px rgba(71, 49, 23, 0.08);
+  padding: 20px 24px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.statMetricCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #7b5ba1;
+}
+
+.statMetricCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(71, 49, 23, 0.12);
+}
+
+.statMetricCardWarning::before {
+  background: #c4934b;
+}
+
+.statMetricCardInfo::before {
+  background: #5b8c7e;
+}
+
+.statMetricCardSuccess::before {
+  background: #9b7cb5;
+}
+
 .advancedChartGrid {
   display: grid;
   grid-template-columns: 1.2fr 0.8fr;
@@ -565,9 +668,9 @@
 }
 
 .advancedPanel {
-  background: linear-gradient(180deg, #ffffff 0%, #fffbf8 100%);
-  border: 2px solid #e8d5c0;
-  box-shadow: 0 18px 32px rgba(63, 44, 20, 0.13);
+  background: #ffffff;
+  border: 1px solid #e8ddd4;
+  box-shadow: 0 4px 20px rgba(71, 49, 23, 0.08);
   padding: 24px;
   border-radius: 22px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -576,18 +679,12 @@
 }
 
 .advancedPanel::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, transparent, rgba(201, 133, 31, 0.3), transparent);
+  content: none;
 }
 
 .advancedPanel:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 24px 40px rgba(63, 44, 20, 0.18), 0 0 0 1px rgba(224, 197, 164, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(71, 49, 23, 0.12);
 }
 
 .advancedPanelTitle {

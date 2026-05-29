@@ -3,16 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { AdminGuard } from "@/features/auth/auth-guard";
 import { useAuth } from "@/features/auth/auth-context";
-import { fetchAdminDashboardData, checkApiHealth } from "@/features/reports/reports-api";
 import {
   fetchEstadisticasDashboard,
   checkStatisticsApiHealth,
   EMPTY_ESTADISTICAS_DASHBOARD_DATA,
 } from "@/features/statistics/statistics-api";
-import { EMPTY_ADMIN_DASHBOARD_DATA } from "@/features/reports/types";
 import AdminShell from "@/components/navigation/AdminShell";
 import AppFooter from "@/components/layout/AppFooter";
-import MetricCard from "@/components/dashboard/MetricCard";
 import MapboxReportMap from "@/components/dashboard/MapboxReportMap";
 import { fetchMapPoints } from "@/features/maps/maps-api";
 import styles from "./page.module.css";
@@ -35,7 +32,6 @@ export default function AdminPage() {
   const [reportScope, setReportScope] = useState("todos");
   const [selectedArea, setSelectedArea] = useState("todas");
   const [period, setPeriod] = useState("semanal");
-  const [dashboardData, setDashboardData] = useState(EMPTY_ADMIN_DASHBOARD_DATA);
   const [estadisticasData, setEstadisticasData] = useState(EMPTY_ESTADISTICAS_DASHBOARD_DATA);
   const [mapPoints, setMapPoints] = useState([]);
   const [mapLoading, setMapLoading] = useState(true);
@@ -43,12 +39,11 @@ export default function AdminPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [connectionStatus, setConnectionStatus] = useState(null); // null | 'connected' | 'error'
-  const [statsConnectionStatus, setStatsConnectionStatus] = useState(null);
 
   const displayName = profile?.nombre || user?.email || "usuario";
-  const isPlaceholderMode = dashboardData.isUsingPlaceholder;
-  const isStatsPlaceholderMode = estadisticasData.isUsingPlaceholder;
+  const isPlaceholderMode = estadisticasData.isUsingPlaceholder;
 
+  // Cargar datos desde el microservicio de estadísticas (única fuente de verdad)
   useEffect(() => {
     let isMounted = true;
 
@@ -62,8 +57,8 @@ export default function AdminPage() {
       setLoadError("");
 
       try {
-        // Verificar conexión con el microservicio
-        const healthCheck = await checkApiHealth();
+        // Verificar conexión con el microservicio de estadísticas
+        const healthCheck = await checkStatisticsApiHealth();
         if (!healthCheck.ok) {
           console.warn("Advertencia de conexión:", healthCheck.message);
           setConnectionStatus('error');
@@ -71,17 +66,17 @@ export default function AdminPage() {
           setConnectionStatus('connected');
         }
 
-        const token = await user.getIdToken();
-        const data = await fetchAdminDashboardData(token);
+        // Cargar todos los datos del dashboard desde el microservicio de estadísticas
+        const data = await fetchEstadisticasDashboard({ periodo: period });
         if (isMounted) {
-          setDashboardData(data);
+          setEstadisticasData(data);
         }
       } catch (err) {
         console.error("Error cargando dashboard:", err);
         setConnectionStatus('error');
         if (isMounted) {
-          setDashboardData(EMPTY_ADMIN_DASHBOARD_DATA);
-          setLoadError("No fue posible consultar reportes. Verifica la conexión con el microservicio.");
+          setEstadisticasData(EMPTY_ESTADISTICAS_DASHBOARD_DATA);
+          setLoadError("No fue posible consultar estadísticas. Verifica la conexión con el microservicio de estadísticas.");
         }
       } finally {
         if (isMounted) {
@@ -91,49 +86,6 @@ export default function AdminPage() {
     }
 
     loadDashboard();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [user]);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function loadEstadisticas() {
-      if (!user) {
-        setEstadisticasData(EMPTY_ESTADISTICAS_DASHBOARD_DATA);
-        return;
-      }
-
-      try {
-        // Verificar conexión con el microservicio de estadísticas
-        const healthCheck = await checkStatisticsApiHealth();
-        if (!healthCheck.ok) {
-          console.warn("Advertencia de conexión estadísticas:", healthCheck.message);
-          setStatsConnectionStatus('error');
-        } else {
-          setStatsConnectionStatus('connected');
-        }
-
-        const data = await fetchEstadisticasDashboard({ periodo: period });
-        if (isMounted) {
-          setEstadisticasData(data);
-        }
-      } catch (err) {
-        console.error("Error cargando estadísticas:", err);
-        setStatsConnectionStatus('error');
-        if (isMounted) {
-          setEstadisticasData(EMPTY_ESTADISTICAS_DASHBOARD_DATA);
-        }
-      } finally {
-        if (isMounted) {
-          // No necesitamos un loading separado, usamos el general
-        }
-      }
-    }
-
-    loadEstadisticas();
 
     return () => {
       isMounted = false;
@@ -182,11 +134,20 @@ export default function AdminPage() {
   }, [user, reportScope, selectedArea]);
 
   const areaTopPercentage = useMemo(() => {
-    if (!dashboardData.reportsByArea.length) {
+    if (!estadisticasData.reportsByArea.length) {
       return null;
     }
-    return dashboardData.reportsByArea[0]?.percentage ?? null;
-  }, [dashboardData.reportsByArea]);
+    return estadisticasData.reportsByArea[0]?.porcentaje ?? null;
+  }, [estadisticasData.reportsByArea]);
+
+  // Calcular pendientes desde estadisticasData
+  const pendingReports = useMemo(() => {
+    // Total - en_proceso - en_revision - resueltos = pendientes
+    const total = estadisticasData.metrics.totalReports || 0;
+    const inProgress = estadisticasData.metrics.inProgressReports || 0;
+    const solved = estadisticasData.metrics.solvedReports || 0;
+    return Math.max(0, total - inProgress - solved);
+  }, [estadisticasData.metrics]);
 
   return (
     <AdminGuard>
@@ -194,186 +155,67 @@ export default function AdminPage() {
         <div className={styles.backgroundGlow} />
 
         <AdminShell activeSection="dashboard" breadcrumb="Admin / Dashboard">
-          <section className={styles.filtersBar}>
-            <label className={styles.filterLabel}>
-              Estado de reportes
-              <select
-                className={styles.select}
-                value={reportScope}
-                onChange={(event) => setReportScope(event.target.value)}
-              >
-                <option value="todos">Todos los estados</option>
-                <option value="pendiente">Pendiente</option>
-                <option value="en_revision">En revisión</option>
-                <option value="en_proceso">En proceso</option>
-                <option value="resuelto">Resuelto</option>
-              </select>
-            </label>
-
-            <label className={styles.filterLabel}>
-              Area
-              <select
-                className={styles.select}
-                value={selectedArea}
-                onChange={(event) => setSelectedArea(event.target.value)}
-              >
-                <option value="todas">Todas las areas</option>
-                <option value="alumbrado">Alumbrado publico</option>
-                <option value="vias">Vias y espacio publico</option>
-                <option value="aseo">Aseo y limpieza</option>
-              </select>
-            </label>
-
-            <label className={styles.filterLabel}>
-              Periodo
-              <select
-                className={styles.select}
-                value={period}
-                onChange={(event) => setPeriod(event.target.value)}
-              >
-                <option value="semanal">Semanal</option>
-                <option value="mensual">Mensual</option>
-                <option value="anual">Anual</option>
-              </select>
-            </label>
-          </section>
-
           <section className={styles.welcomeCard}>
             <h1 className={styles.title}>Hola, {displayName}</h1>
             <p className={styles.subtitle}>
               {isPlaceholderMode
-                ? "Este dashboard usa placeholders mientras se integra el microservicio de reportes."
+                ? "Este dashboard usa placeholders mientras se integra el microservicio de estadísticas."
                 : "Visualiza métricas y estadísticas de todos los reportes de la plataforma."}
             </p>
             {isLoading ? <p className={styles.info}>Cargando datos...</p> : null}
             {loadError ? <p className={styles.error}>{loadError}</p> : null}
             {connectionStatus === 'connected' && !isPlaceholderMode && (
               <p style={{ color: '#2E7D32', fontSize: '0.85rem', marginTop: '0.5rem' }}>
-                ✓ Conectado al microservicio de reportes
+                ✓ Conectado al microservicio de estadísticas
               </p>
             )}
             {connectionStatus === 'error' && (
               <p style={{ color: '#C62828', fontSize: '0.85rem', marginTop: '0.5rem' }}>
-                ⚠ Error de conexión con el microservicio
+                ⚠ Error de conexión con el microservicio de estadísticas
               </p>
             )}
           </section>
 
-          <section className={styles.metricsGrid}>
-            <MetricCard
-              title="Total de reportes"
-              value={formatMetricValue(dashboardData.metrics.totalReports)}
-              helper={isPlaceholderMode ? "Dato pendiente" : "Conectado"}
-              trend="+12.5% vs semana anterior"
-              trendDirection="up"
-              emphasis="primary"
-            />
-            <MetricCard
-              title="Reportes en proceso"
-              value={formatMetricValue(dashboardData.metrics.inProgressReports)}
-              helper={isPlaceholderMode ? "Dato pendiente" : "Conectado"}
-              trend="+8.1% vs semana anterior"
-              trendDirection="up"
-              emphasis="primary"
-            />
-            <MetricCard
-              title="Reportes resueltos"
-              value={formatMetricValue(dashboardData.metrics.solvedReports)}
-              helper={isPlaceholderMode ? "Dato pendiente" : "Conectado"}
-              trend="+18.3% vs semana anterior"
-              trendDirection="up"
-              emphasis="success"
-            />
-            <MetricCard
-              title="Tiempo promedio de resolucion"
-              value={formatMetricValue(
-                dashboardData.metrics.averageResolutionHours,
-                " h"
-              )}
-              helper={isPlaceholderMode ? "Dato pendiente" : "Conectado"}
-              trend="-6.7% vs semana anterior"
-              trendDirection="down"
-              emphasis="primary"
-            />
-          </section>
-
-          <section className={styles.chartGrid}>
-            <article className={styles.panel}>
-              <h2 className={styles.panelTitle}>Procesos diarios</h2>
-              <p className={styles.panelHint}>
-                {dashboardData.dailyProcesses.length > 0
-                  ? `${dashboardData.dailyProcesses.length} días con actividad`
-                  : `Vista ${period} (placeholder)`}
-              </p>
-              <div className={styles.fakeLineChart}>
-                {dashboardData.dailyProcesses.length > 0 ? (
-                  dashboardData.dailyProcesses.slice(0, 12).map((item, index) => {
-                    // El backend puede devolver "date" o "fecha", "total" o "creados"
-                    const value = item.total ?? item.creados ?? 0;
-                    const maxValue = Math.max(...dashboardData.dailyProcesses.map(d => d.total ?? d.creados ?? 0), 1);
-                    const height = Math.max((value / maxValue) * 100, 10);
-                    return (
-                      <span
-                        key={index}
-                        className={styles.bar}
-                        style={{ height: `${height}%` }}
-                        title={item.date || item.fecha}
-                      />
-                    );
-                  })
-                ) : (
-                  // Placeholder bars
-                  <>
-                    <span className={styles.bar} style={{ height: '45%' }} />
-                    <span className={styles.bar} style={{ height: '70%' }} />
-                    <span className={styles.bar} style={{ height: '55%' }} />
-                    <span className={styles.bar} style={{ height: '85%' }} />
-                    <span className={styles.bar} style={{ height: '60%' }} />
-                    <span className={styles.bar} style={{ height: '90%' }} />
-                    <span className={styles.bar} style={{ height: '75%' }} />
-                    <span className={styles.bar} style={{ height: '50%' }} />
-                    <span className={styles.bar} style={{ height: '65%' }} />
-                    <span className={styles.bar} style={{ height: '80%' }} />
-                    <span className={styles.bar} style={{ height: '95%' }} />
-                    <span className={styles.bar} style={{ height: '60%' }} />
-                  </>
-                )}
+          {/* Métricas principales - estilo funcionario */}
+          {isLoading ? null : (
+            <section className={styles.metricsSection}>
+              <div className={styles.metricsHeader}>
+                <h2 className={styles.sectionTitle}>Métricas Principales</h2>
+                <label className={styles.periodFilter}>
+                  Período:
+                  <select
+                    className={styles.select}
+                    value={period}
+                    onChange={(event) => setPeriod(event.target.value)}
+                  >
+                    <option value="semanal">Semanal</option>
+                    <option value="mensual">Mensual</option>
+                    <option value="anual">Anual</option>
+                  </select>
+                </label>
               </div>
-            </article>
-
-            <article className={styles.panel}>
-              <h2 className={styles.panelTitle}>Reportes por area</h2>
-              <p className={styles.panelHint}>
-                {dashboardData.reportsByArea.length
-                  ? `Top area: ${dashboardData.reportsByArea[0]?.name || dashboardData.reportsByArea[0]?.areaNombre || "N/A"}`
-                  : "Porcentaje por categoria (placeholder)"}
-              </p>
-              <div className={styles.fakeDonut}>
-                <div className={styles.donutCenter}>
-                  {formatMetricValue(areaTopPercentage, "%")}
+              <div className={styles.metricsGrid}>
+                <div className={styles.metricCard}>
+                  <p className={styles.metricLabel}>Total de reportes</p>
+                  <p className={styles.metricValue}>{formatMetricValue(estadisticasData.metrics.totalReports)}</p>
+                </div>
+                <div className={`${styles.metricCard} ${styles.metricWarning}`}>
+                  <p className={styles.metricLabel}>Pendientes</p>
+                  <p className={styles.metricValue}>{formatMetricValue(pendingReports)}</p>
+                </div>
+                <div className={`${styles.metricCard} ${styles.metricInfo}`}>
+                  <p className={styles.metricLabel}>En proceso</p>
+                  <p className={styles.metricValue}>{formatMetricValue(estadisticasData.metrics.inProgressReports)}</p>
+                </div>
+                <div className={`${styles.metricCard} ${styles.metricSuccess}`}>
+                  <p className={styles.metricLabel}>Resueltos</p>
+                  <p className={styles.metricValue}>{formatMetricValue(estadisticasData.metrics.solvedReports)}</p>
                 </div>
               </div>
-              {dashboardData.reportsByArea.length > 0 && (
-                <div className={styles.legendContainer}>
-                  {dashboardData.reportsByArea.slice(0, 4).map((area, index) => (
-                    <div key={index} className={styles.legendItem}>
-                      <span 
-                        className={styles.legendDot} 
-                        style={{ backgroundColor: legendColors[index] }}
-                      />
-                      <span className={styles.legendLabel}>
-                        {area.name || area.areaNombre}
-                      </span>
-                      <span className={styles.legendValue}>
-                        {area.total ?? 0}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </article>
-          </section>
+            </section>
+          )}
 
+          {/* Mapa de reportes */}
           <section className={styles.mapPanel}>
             <div className={styles.mapHeader}>
               <div>
@@ -392,59 +234,175 @@ export default function AdminPage() {
             />
           </section>
 
-          {/* Sección de Estadísticas Avanzadas */}
+
+          {/* Sección de estadísticas */}
           <section className={styles.statsSection}>
             <div className={styles.statsHeader}>
-              <h2 className={styles.statsTitle}>Estadísticas Avanzadas</h2>
+              <h2 className={styles.statsTitle}>Estadísticas</h2>
               <p className={styles.statsSubtitle}>
-                {isStatsPlaceholderMode
+                {isPlaceholderMode
                   ? "Estas estadísticas usan placeholders mientras se integra el microservicio."
-                  : "Visualiza estadísticas avanzadas de todos los reportes de la plataforma."}
+                  : "Información detallada sobre los reportes de la plataforma."}
               </p>
-              {statsConnectionStatus === 'connected' && !isStatsPlaceholderMode && (
+              {connectionStatus === 'connected' && !isPlaceholderMode && (
                 <p style={{ color: '#2E7D32', fontSize: '0.85rem', marginTop: '0.5rem' }}>
                   ✓ Conectado al microservicio de estadísticas
                 </p>
               )}
-              {statsConnectionStatus === 'error' && (
+              {connectionStatus === 'error' && (
                 <p style={{ color: '#C62828', fontSize: '0.85rem', marginTop: '0.5rem' }}>
                   ⚠ Error de conexión con el microservicio de estadísticas
                 </p>
               )}
             </div>
 
-            {/* Métricas de estadísticas avanzadas */}
+            {/* Métricas de estadísticas - colores diferentes */}
             <div className={styles.advancedMetricsGrid}>
-              <MetricCard
-                title="Área más activa"
-                value={estadisticasData.areaMasActiva?.area || "--"}
-                helper={estadisticasData.areaMasActiva?.total ? `${estadisticasData.areaMasActiva.total} reportes activos` : "Sin datos"}
-                emphasis="warning"
-              />
-              <MetricCard
-                title="Tipo más frecuente"
-                value={estadisticasData.tipoMasFrecuente?.tipo || "--"}
-                helper={estadisticasData.tipoMasFrecuente?.area || "Sin datos"}
-                emphasis="primary"
-              />
-              <MetricCard
-                title="Reportes resueltos"
-                value={formatMetricValue(estadisticasData.tiposFrecuentes.reduce((sum, t) => sum + (t.total || 0), 0))}
-                helper="Última semana"
-                emphasis="success"
-              />
-              <MetricCard
-                title="Mes con más reportes"
-                value={estadisticasData.tendenciaMensual.length > 0 
-                  ? estadisticasData.tendenciaMensual.reduce((max, m) => m.total > max.total ? m : max).mes 
-                  : "--"}
-                helper="Últimos 6 meses"
-                emphasis="primary"
-              />
+              <div className={styles.statMetricCard}>
+                <p className={styles.metricLabel}>Área más activa</p>
+                <p className={styles.metricValue}>{estadisticasData.areaMasActiva?.area || "--"}</p>
+                <p style={{ fontSize: '0.75rem', color: '#6b5a45', marginTop: '4px' }}>
+                  {estadisticasData.areaMasActiva?.total ? `${estadisticasData.areaMasActiva.total} reportes` : "Sin datos"}
+                </p>
+              </div>
+              <div className={`${styles.statMetricCard} ${styles.statMetricCardWarning}`}>
+                <p className={styles.metricLabel}>Mes con más reportes</p>
+                <p className={styles.metricValue}>
+                  {estadisticasData.tendenciaMensual.length > 0 
+                    ? estadisticasData.tendenciaMensual.reduce((max, m) => m.total > max.total ? m : max).mes 
+                    : "--"}
+                </p>
+                <p style={{ fontSize: '0.75rem', color: '#6b5a45', marginTop: '4px' }}>Últimos 6 meses</p>
+              </div>
+              <div className={`${styles.statMetricCard} ${styles.statMetricCardInfo}`}>
+                <p className={styles.metricLabel}>Tendencia actual</p>
+                <p className={styles.metricValue}>
+                  {estadisticasData.tendenciaMensual.length > 0 
+                    ? `${estadisticasData.tendenciaMensual[estadisticasData.tendenciaMensual.length - 1]?.total || 0}`
+                    : "--"}
+                </p>
+                <p style={{ fontSize: '0.75rem', color: '#6b5a45', marginTop: '4px' }}>Último mes</p>
+              </div>
+              <div className={`${styles.statMetricCard} ${styles.statMetricCardSuccess}`}>
+                <p className={styles.metricLabel}>Total tipos</p>
+                <p className={styles.metricValue}>{estadisticasData.tiposFrecuentes.length || "--"}</p>
+                <p style={{ fontSize: '0.75rem', color: '#6b5a45', marginTop: '4px' }}>Esta semana</p>
+              </div>
             </div>
 
-            {/* Tipos más frecuentes y tendencia mensual */}
+            {/* Gráficos de estadísticas */}
             <div className={styles.advancedChartGrid}>
+              <article className={styles.advancedPanel}>
+                <h3 className={styles.advancedPanelTitle}>Procesos diarios</h3>
+                <p className={styles.advancedPanelHint}>
+                  {estadisticasData.dailyProcesses.length > 0 ? (() => {
+                    const data = estadisticasData.dailyProcesses;
+                    const diasConActividad = data.filter(d => (d.total || 0) > 0).length;
+                    const diasSinActividad = data.filter(d => (d.total || 0) === 0).length;
+                    const primeraFecha = data[0]?.fecha || '';
+                    const ultimaFecha = data[data.length - 1]?.fecha || '';
+                    
+                    // Calcular número de semana
+                    const fecha = new Date(ultimaFecha);
+                    const inicioAno = new Date(fecha.getFullYear(), 0, 1);
+                    const numSemana = Math.ceil(((fecha - inicioAno) / 86400000 + 1) / 7);
+                    
+                    return (
+                      <>
+                        <span style={{ fontWeight: '600' }}>
+                          {period === 'semanal' ? `Semana ${numSemana}` : period === 'mensal' ? 'Último mes' : 'Último año'}
+                        </span>
+                        <span style={{ color: '#6b5a45' }}>
+                          {' '}| {diasConActividad} días con actividad{diasSinActividad > 0 ? `, ${diasSinActividad} días sin reportes` : ''}
+                        </span>
+                        {diasSinActividad > 0 && (
+                          <span style={{ display: 'block', fontSize: '0.78rem', color: '#8f7758', marginTop: '2px' }}>
+                            Días sin reportes: {data.filter(d => (d.total || 0) === 0).map(d => d.fecha).join(', ')}
+                          </span>
+                        )}
+                      </>
+                    );
+                  })() : `Vista ${period} (placeholder)`}
+                </p>
+                <div className={styles.fakeLineChart}>
+                  {estadisticasData.dailyProcesses.length > 0 ? (
+                    estadisticasData.dailyProcesses.slice(0, 14).map((item, index) => {
+                      const value = item.total || 0;
+                      const maxValue = Math.max(...estadisticasData.dailyProcesses.map(d => d.total || 0), 1);
+                      const height = Math.max((value / maxValue) * 100, 10);
+                      const esCero = value === 0;
+                      return (
+                        <span
+                          key={index}
+                          className={styles.bar}
+                          style={{ 
+                            height: `${height}%`, 
+                            background: esCero 
+                              ? 'linear-gradient(180deg, #ccc 0%, #e0e0e0 100%)' 
+                              : 'linear-gradient(180deg, #c66c1e 0%, #e8a854 100%)'
+                          }}
+                          title={`${item.fecha}: ${item.total} reportes${esCero ? ' (sin actividad)' : ''}`}
+                        />
+                      );
+                    })
+                  ) : (
+                    <>
+                      <span className={styles.bar} style={{ height: '45%' }} />
+                      <span className={styles.bar} style={{ height: '70%' }} />
+                      <span className={styles.bar} style={{ height: '55%' }} />
+                      <span className={styles.bar} style={{ height: '85%' }} />
+                      <span className={styles.bar} style={{ height: '60%' }} />
+                      <span className={styles.bar} style={{ height: '50%' }} />
+                    </>
+                  )}
+                </div>
+                {/* Leyenda de días */}
+                {estadisticasData.dailyProcesses.length > 0 && (
+                  <div style={{ display: 'flex', gap: '16px', marginTop: '12px', fontSize: '0.78rem', color: '#6b5a45' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ width: '12px', height: '12px', borderRadius: '2px', background: 'linear-gradient(180deg, #c66c1e, #e8a854)', display: 'inline-block' }}></span>
+                      Con actividad
+                    </span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ width: '12px', height: '12px', borderRadius: '2px', background: 'linear-gradient(180deg, #ccc, #e0e0e0)', display: 'inline-block' }}></span>
+                      Sin actividad
+                    </span>
+                  </div>
+                )}
+              </article>
+
+              <article className={styles.advancedPanel}>
+                <h3 className={styles.advancedPanelTitle}>Reportes por area</h3>
+                <p className={styles.advancedPanelHint}>
+                  {estadisticasData.reportsByArea.length
+                    ? `Top area: ${estadisticasData.reportsByArea[0]?.area || estadisticasData.reportsByArea[0]?.areaNombre || "N/A"}`
+                    : "Porcentaje por categoria (placeholder)"}
+                </p>
+                <div className={styles.fakeDonut}>
+                  <div className={styles.donutCenter}>
+                    {formatMetricValue(areaTopPercentage, "%")}
+                  </div>
+                </div>
+                {estadisticasData.reportsByArea.length > 0 && (
+                  <div className={styles.legendContainer}>
+                    {estadisticasData.reportsByArea.slice(0, 4).map((area, index) => (
+                      <div key={index} className={styles.legendItem}>
+                        <span 
+                          className={styles.legendDot} 
+                          style={{ backgroundColor: legendColors[index] }}
+                        />
+                        <span className={styles.legendLabel}>
+                          {area.area || area.areaNombre}
+                        </span>
+                        <span className={styles.legendValue}>
+                          {area.total ?? 0}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </article>
+
               <article className={styles.advancedPanel}>
                 <h3 className={styles.advancedPanelTitle}>Tipos de reportes más frecuentes</h3>
                 <p className={styles.advancedPanelHint}>
@@ -475,118 +433,7 @@ export default function AdminPage() {
                   </div>
                 )}
               </article>
-
-              <article className={styles.advancedPanel}>
-                <h3 className={styles.advancedPanelTitle}>Tendencia mensual</h3>
-                <p className={styles.advancedPanelHint}>
-                  {estadisticasData.tendenciaMensual.length > 0
-                    ? `${estadisticasData.tendenciaMensual.length} meses de datos`
-                    : "Últimos 6 meses (placeholder)"}
-                </p>
-                <div className={styles.fakeLineChart}>
-                  {estadisticasData.tendenciaMensual.length > 0 ? (
-                    estadisticasData.tendenciaMensual.map((item, index) => {
-                      const maxValue = Math.max(...estadisticasData.tendenciaMensual.map(m => m.total || 0), 1);
-                      const height = Math.max(((item.total || 0) / maxValue) * 100, 10);
-                      return (
-                        <span
-                          key={index}
-                          className={styles.bar}
-                          style={{ height: `${height}%` }}
-                          title={`${item.mes}: ${item.total} reportes`}
-                        />
-                      );
-                    })
-                  ) : (
-                    <>
-                      <span className={styles.bar} style={{ height: '45%' }} />
-                      <span className={styles.bar} style={{ height: '70%' }} />
-                      <span className={styles.bar} style={{ height: '55%' }} />
-                      <span className={styles.bar} style={{ height: '85%' }} />
-                      <span className={styles.bar} style={{ height: '60%' }} />
-                      <span className={styles.bar} style={{ height: '50%' }} />
-                    </>
-                  )}
-                </div>
-              </article>
             </div>
-
-            {/* Procesos diarios (estadísticas) */}
-            <article className={styles.fullWidthPanel}>
-              <h3 className={styles.panelTitle}>Procesos diarios - Estadísticas</h3>
-              <p className={styles.panelHint}>
-                {estadisticasData.dailyProcesses.length > 0
-                  ? `${estadisticasData.dailyProcesses.length} días con actividad`
-                  : `Vista ${period} (placeholder)`}
-              </p>
-              <div className={styles.fakeLineChart}>
-                {estadisticasData.dailyProcesses.length > 0 ? (
-                  estadisticasData.dailyProcesses.slice(0, 14).map((item, index) => {
-                    const value = item.total || 0;
-                    const maxValue = Math.max(...estadisticasData.dailyProcesses.map(d => d.total || 0), 1);
-                    const height = Math.max((value / maxValue) * 100, 10);
-                    return (
-                      <span
-                        key={index}
-                        className={styles.bar}
-                        style={{ height: `${height}%` }}
-                        title={item.fecha || item.date}
-                      />
-                    );
-                  })
-                ) : (
-                  <>
-                    <span className={styles.bar} style={{ height: '45%' }} />
-                    <span className={styles.bar} style={{ height: '70%' }} />
-                    <span className={styles.bar} style={{ height: '55%' }} />
-                    <span className={styles.bar} style={{ height: '85%' }} />
-                    <span className={styles.bar} style={{ height: '60%' }} />
-                    <span className={styles.bar} style={{ height: '90%' }} />
-                    <span className={styles.bar} style={{ height: '75%' }} />
-                    <span className={styles.bar} style={{ height: '50%' }} />
-                    <span className={styles.bar} style={{ height: '65%' }} />
-                    <span className={styles.bar} style={{ height: '80%' }} />
-                    <span className={styles.bar} style={{ height: '95%' }} />
-                    <span className={styles.bar} style={{ height: '60%' }} />
-                    <span className={styles.bar} style={{ height: '70%' }} />
-                    <span className={styles.bar} style={{ height: '55%' }} />
-                  </>
-                )}
-              </div>
-            </article>
-
-            {/* Distribución por área */}
-            <article className={styles.areaPanel}>
-              <h3 className={styles.panelTitle}>Distribución por área</h3>
-              <p className={styles.panelHint}>
-                {estadisticasData.reportsByArea.length > 0
-                  ? `${estadisticasData.reportsByArea.length} áreas con reportes`
-                  : "Distribución por área (placeholder)"}
-              </p>
-              {estadisticasData.reportsByArea.length > 0 ? (
-                <div className={styles.areaGrid}>
-                  {estadisticasData.reportsByArea.map((area, index) => (
-                    <div key={index} className={styles.areaCard}>
-                      <span className={styles.areaName}>{area.area || area.areaNombre}</span>
-                      <div className={styles.areaBarContainer}>
-                        <div 
-                          className={styles.areaBar} 
-                          style={{ width: `${area.porcentaje || area.percentage || 0}%` }}
-                        />
-                      </div>
-                      <span className={styles.areaTotal}>{area.total || 0} reportes</span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className={styles.placeholderAreaBars}>
-                  <div className={styles.placeholderAreaBar} style={{ width: '80%' }} />
-                  <div className={styles.placeholderAreaBar} style={{ width: '65%' }} />
-                  <div className={styles.placeholderAreaBar} style={{ width: '50%' }} />
-                  <div className={styles.placeholderAreaBar} style={{ width: '35%' }} />
-                </div>
-              )}
-            </article>
           </section>
 
           <AppFooter />
