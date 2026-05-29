@@ -187,7 +187,7 @@ export default function MapboxReportMap({
         maxzoom: 16,
         paint: {
           "heatmap-weight": ["interpolate", ["linear"], ["get", "weight"], 0, 0, 6, 1],
-          "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 0, 1, 12, 3],
+          "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 0, 1.5, 12, 4],
           "heatmap-color": [
             "interpolate",
             ["linear"],
@@ -205,7 +205,7 @@ export default function MapboxReportMap({
             1,
             "rgb(178,24,43)",
           ],
-          "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 0, 8, 12, 20, 16, 30],
+          "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 0, 12, 12, 28, 16, 42],
           "heatmap-opacity": ["interpolate", ["linear"], ["zoom"], 10, 1, 16, 0.3],
         },
       });
@@ -214,11 +214,11 @@ export default function MapboxReportMap({
         id: HEAT_POINT_LAYER_ID,
         type: "circle",
         source: HEAT_SOURCE_ID,
-        minzoom: 14,
+        minzoom: 0,
         paint: {
-          "circle-radius": ["interpolate", ["linear"], ["zoom"], 14, 3, 18, 6],
+          "circle-radius": ["interpolate", ["linear"], ["zoom"], 0, 2, 12, 4, 18, 8],
           "circle-color": "#8c2d04",
-          "circle-opacity": 0.65,
+          "circle-opacity": 0.35,
         },
       });
 

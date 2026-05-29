@@ -11,7 +11,6 @@ import styles from "./page.module.css";
 
 export default function AdminMapaPage() {
   const { user } = useAuth();
-  const [selectedArea, setSelectedArea] = useState("todas");
   const [heatmapPoints, setHeatmapPoints] = useState([]);
   const [mapLoading, setMapLoading] = useState(true);
   const [mapError, setMapError] = useState("");
@@ -29,10 +28,7 @@ export default function AdminMapaPage() {
       setMapError("");
 
       try {
-        const points = await fetchHeatmapPoints({
-          area: selectedArea,
-          tipoReporte: "hurto",
-        });
+        const points = await fetchHeatmapPoints({ tipoReporte: "hurto" });
 
         if (isMounted) {
           setHeatmapPoints(points);
@@ -55,28 +51,12 @@ export default function AdminMapaPage() {
     return () => {
       isMounted = false;
     };
-  }, [user, selectedArea]);
+  }, [user]);
 
   return (
     <AdminGuard>
       <main className={styles.page}>
         <AdminShell activeSection="mapa" breadcrumb="Admin / Mapa de calor">
-          <section className={styles.filtersBar}>
-            <label className={styles.filterLabel}>
-              Area
-              <select
-                className={styles.select}
-                value={selectedArea}
-                onChange={(event) => setSelectedArea(event.target.value)}
-              >
-                <option value="todas">Todas las areas</option>
-                <option value="alumbrado">Alumbrado publico</option>
-                <option value="vias">Vias y espacio publico</option>
-                <option value="aseo">Aseo y limpieza</option>
-              </select>
-            </label>
-          </section>
-
           <section className={styles.mapPanel}>
             <div className={styles.mapHeader}>
               <h1 className={styles.title}>Mapa de calor de hurtos</h1>
