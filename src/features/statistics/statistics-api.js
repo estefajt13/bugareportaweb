@@ -48,15 +48,14 @@ async function request(path) {
     cache: "no-store",
   });
 
-  // Si la respuesta es 204 No Content, retornar null (sin error)
-  if (response.status === 204) {
-    return null;
-  }
-
   if (!response.ok) {
     const errorText = await response.text();
-    // Lanzar error con más contexto para debugging
-    throw new Error(`Error ${response.status}: ${errorText || response.statusText}`);
+    throw new Error(`Error ${response.status}: ${errorText}`);
+  }
+
+  // Si la respuesta es 204 No Content, retornar null
+  if (response.status === 204) {
+    return null;
   }
 
   return response.json();
@@ -167,7 +166,7 @@ export async function fetchAdminSummary() {
 }
 
 /**
- * Obtiene todos los datos para el dashboard admin desde el microservicio de estadísticas
+ * Obtiene todos los datos para el dashboard de estadísticas
  * @param {Object} filters - Filtros opcionales
  * @returns {Promise<Object>}
  */
@@ -176,7 +175,6 @@ export async function fetchEstadisticasDashboard(filters = {}) {
 
   try {
     const [
-      adminSummary,
       areaMasActiva,
       tiposFrecuentes,
       tendenciaMensual,
@@ -184,7 +182,6 @@ export async function fetchEstadisticasDashboard(filters = {}) {
       dailyProcesses,
       reportsByArea,
     ] = await Promise.all([
-      fetchAdminSummary(),
       fetchAreaMasActiva(),
       fetchTiposFrecuentes(5),
       fetchTendenciaMensual(),
@@ -194,14 +191,6 @@ export async function fetchEstadisticasDashboard(filters = {}) {
     ]);
 
     return {
-      // Datos del resumen admin (métricas principales)
-      metrics: {
-        totalReports: adminSummary?.totalReportes ?? adminSummary?.metrics?.totalReports ?? null,
-        inProgressReports: adminSummary?.tiempos?.enProceso + adminSummary?.tiempos?.enRevision ?? adminSummary?.metrics?.inProgressReports ?? null,
-        solvedReports: adminSummary?.tiempos?.resueltos ?? adminSummary?.metrics?.solvedReports ?? null,
-        averageResolutionHours: adminSummary?.averageResolutionHours ?? adminSummary?.metrics?.averageResolutionHours ?? null,
-      },
-      // Datos de estadísticas avanzadas
       areaMasActiva,
       tiposFrecuentes,
       tendenciaMensual,
@@ -220,14 +209,6 @@ export async function fetchEstadisticasDashboard(filters = {}) {
  * Datos vacíos por defecto para el dashboard de estadísticas
  */
 export const EMPTY_ESTADISTICAS_DASHBOARD_DATA = {
-  // Métricas principales (del resumen admin)
-  metrics: {
-    totalReports: null,
-    inProgressReports: null,
-    solvedReports: null,
-    averageResolutionHours: null,
-  },
-  // Datos de estadísticas avanzadas
   areaMasActiva: { area: null, total: 0 },
   tiposFrecuentes: [],
   tendenciaMensual: [],
