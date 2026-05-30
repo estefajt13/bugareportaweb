@@ -19,7 +19,7 @@ import MetricCard from "@/components/dashboard/MetricCard";
 import MapboxReportMap from "@/components/dashboard/MapboxReportMap";
 import { fetchMapPoints } from "@/features/maps/maps-api";
 import styles from "./page.module.css";
-
+// comentario
 function formatMetricValue(value, suffix = "") {
   if (value === null || value === undefined || Number.isNaN(Number(value))) {
     return "--";
