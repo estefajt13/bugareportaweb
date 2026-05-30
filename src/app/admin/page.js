@@ -24,6 +24,54 @@ function formatMetricValue(value, suffix = "") {
   return `${formatted}${suffix}`;
 }
 
+const weekDayNames = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+const shortMonthNames = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+
+function formatIsoDate(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function getMonday(date) {
+  const result = new Date(date);
+  const day = result.getDay();
+  result.setDate(result.getDate() - ((day + 6) % 7));
+  result.setHours(0, 0, 0, 0);
+  return result;
+}
+
+function buildWeeklyDailyProcesses(items) {
+  const itemsByDate = new Map();
+  items.forEach(item => {
+    const iso = formatIsoDate(item.fecha || item.date);
+    if (iso) {
+      const existing = itemsByDate.get(iso);
+      itemsByDate.set(iso, {
+        fecha: iso,
+        total: (existing?.total || 0) + (item.total || 0),
+      });
+    }
+  });
+
+  const monday = getMonday(new Date());
+
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(monday);
+    date.setDate(monday.getDate() + index);
+    const iso = formatIsoDate(date);
+    const entry = itemsByDate.get(iso);
+    return {
+      fecha: iso,
+      total: entry?.total || 0,
+      name: weekDayNames[index],
+      date,
+    };
+  });
+}
+
 // Colores para la leyenda del donut
 const legendColors = ["#c66c1e", "#f2bc85", "#f7dfc4", "#e8a854"];
 
@@ -67,7 +115,8 @@ export default function AdminPage() {
         }
 
         // Cargar todos los datos del dashboard desde el microservicio de estadísticas
-        const data = await fetchEstadisticasDashboard({ periodo: period });
+        // Nota: dailyProcesses siempre usa 'semanal' para mostrar la semana actual
+        const data = await fetchEstadisticasDashboard({ periodo: 'semanal' });
         if (isMounted) {
           setEstadisticasData(data);
         }
@@ -140,6 +189,11 @@ export default function AdminPage() {
     return estadisticasData.reportsByArea[0]?.porcentaje ?? null;
   }, [estadisticasData.reportsByArea]);
 
+  const weeklyDailyProcesses = useMemo(
+    () => buildWeeklyDailyProcesses(estadisticasData.dailyProcesses),
+    [estadisticasData.dailyProcesses]
+  );
+
   // Calcular pendientes desde estadisticasData
   const pendingReports = useMemo(() => {
     // Total - en_proceso - en_revision - resueltos = pendientes
@@ -164,16 +218,6 @@ export default function AdminPage() {
             </p>
             {isLoading ? <p className={styles.info}>Cargando datos...</p> : null}
             {loadError ? <p className={styles.error}>{loadError}</p> : null}
-            {connectionStatus === 'connected' && !isPlaceholderMode && (
-              <p style={{ color: '#2E7D32', fontSize: '0.85rem', marginTop: '0.5rem' }}>
-                ✓ Conectado al microservicio de estadísticas
-              </p>
-            )}
-            {connectionStatus === 'error' && (
-              <p style={{ color: '#C62828', fontSize: '0.85rem', marginTop: '0.5rem' }}>
-                ⚠ Error de conexión con el microservicio de estadísticas
-              </p>
-            )}
           </section>
 
           {/* Métricas principales - estilo funcionario */}
@@ -244,16 +288,6 @@ export default function AdminPage() {
                   ? "Estas estadísticas usan placeholders mientras se integra el microservicio."
                   : "Información detallada sobre los reportes de la plataforma."}
               </p>
-              {connectionStatus === 'connected' && !isPlaceholderMode && (
-                <p style={{ color: '#2E7D32', fontSize: '0.85rem', marginTop: '0.5rem' }}>
-                  ✓ Conectado al microservicio de estadísticas
-                </p>
-              )}
-              {connectionStatus === 'error' && (
-                <p style={{ color: '#C62828', fontSize: '0.85rem', marginTop: '0.5rem' }}>
-                  ⚠ Error de conexión con el microservicio de estadísticas
-                </p>
-              )}
             </div>
 
             {/* Métricas de estadísticas - colores diferentes */}
@@ -295,56 +329,70 @@ export default function AdminPage() {
               <article className={styles.advancedPanel}>
                 <h3 className={styles.advancedPanelTitle}>Procesos diarios</h3>
                 <p className={styles.advancedPanelHint}>
-                  {estadisticasData.dailyProcesses.length > 0 ? (() => {
-                    const data = estadisticasData.dailyProcesses;
-                    const diasConActividad = data.filter(d => (d.total || 0) > 0).length;
-                    const diasSinActividad = data.filter(d => (d.total || 0) === 0).length;
-                    const primeraFecha = data[0]?.fecha || '';
-                    const ultimaFecha = data[data.length - 1]?.fecha || '';
-                    
-                    // Calcular número de semana
-                    const fecha = new Date(ultimaFecha);
-                    const inicioAno = new Date(fecha.getFullYear(), 0, 1);
-                    const numSemana = Math.ceil(((fecha - inicioAno) / 86400000 + 1) / 7);
-                    
+                  {(() => {
+                    const diasConActividad = weeklyDailyProcesses.filter(d => (d.total || 0) > 0).length;
+                    const diasSinActividad = weeklyDailyProcesses.filter(d => (d.total || 0) === 0).length;
+                    const primeraFecha = weeklyDailyProcesses[0].date;
+                    const ultimaFecha = weeklyDailyProcesses[weeklyDailyProcesses.length - 1].date;
+                    const fechaInicio = `${primeraFecha.getDate()} ${shortMonthNames[primeraFecha.getMonth()]}`;
+                    const fechaFin = `${ultimaFecha.getDate()} ${shortMonthNames[ultimaFecha.getMonth()]}`;
+
                     return (
                       <>
                         <span style={{ fontWeight: '600' }}>
-                          {period === 'semanal' ? `Semana ${numSemana}` : period === 'mensal' ? 'Último mes' : 'Último año'}
+                          Lunes {fechaInicio} - Domingo {fechaFin}
                         </span>
                         <span style={{ color: '#6b5a45' }}>
                           {' '}| {diasConActividad} días con actividad{diasSinActividad > 0 ? `, ${diasSinActividad} días sin reportes` : ''}
                         </span>
-                        {diasSinActividad > 0 && (
+                        {diasConActividad === 0 ? (
                           <span style={{ display: 'block', fontSize: '0.78rem', color: '#8f7758', marginTop: '2px' }}>
-                            Días sin reportes: {data.filter(d => (d.total || 0) === 0).map(d => d.fecha).join(', ')}
+                            No hay reportes esta semana.
                           </span>
-                        )}
+                        ) : diasSinActividad > 0 ? (
+                          <span style={{ display: 'block', fontSize: '0.78rem', color: '#8f7758', marginTop: '2px' }}>
+                            Días sin reportes: {weeklyDailyProcesses.filter(d => (d.total || 0) === 0).map(d => d.name).join(', ')}
+                          </span>
+                        ) : null}
                       </>
                     );
-                  })() : `Vista ${period} (placeholder)`}
+                  })()}
                 </p>
                 <div className={styles.fakeLineChart}>
-                  {estadisticasData.dailyProcesses.length > 0 ? (
-                    estadisticasData.dailyProcesses.slice(0, 14).map((item, index) => {
-                      const value = item.total || 0;
-                      const maxValue = Math.max(...estadisticasData.dailyProcesses.map(d => d.total || 0), 1);
-                      const height = Math.max((value / maxValue) * 100, 10);
-                      const esCero = value === 0;
-                      return (
-                        <span
-                          key={index}
-                          className={styles.bar}
-                          style={{ 
-                            height: `${height}%`, 
-                            background: esCero 
-                              ? 'linear-gradient(180deg, #ccc 0%, #e0e0e0 100%)' 
-                              : 'linear-gradient(180deg, #c66c1e 0%, #e8a854 100%)'
-                          }}
-                          title={`${item.fecha}: ${item.total} reportes${esCero ? ' (sin actividad)' : ''}`}
-                        />
-                      );
-                    })
+                  {weeklyDailyProcesses.length > 0 ? (
+                    (() => {
+                      const maxValue = Math.max(...weeklyDailyProcesses.map(d => d.total || 0), 1);
+                      return weeklyDailyProcesses.map((item, index) => {
+                        const value = item.total || 0;
+                        const height = Math.max((value / maxValue) * 100, 10);
+                        const esCero = value === 0;
+                        const fechaFormateada = `${item.date.getDate()} ${shortMonthNames[item.date.getMonth()]}`;
+
+                        return (
+                          <div key={index} className={styles.barWrapper}>
+                            {item.total > 0 && (
+                              <span className={styles.barValue}>{item.total}</span>
+                            )}
+                            <span
+                              className={styles.bar}
+                              style={{ 
+                                width: '100%',
+                                height: `${height}%`, 
+                                background: esCero 
+                                  ? 'linear-gradient(180deg, #f0f0f0 0%, #e0e0e0 100%)' 
+                                  : 'linear-gradient(180deg, #c66c1e 0%, #e8a854 100%)',
+                                boxShadow: esCero ? 'none' : '0 0 20px rgba(198,108,30,0.18)'
+                              }}
+                              title={`${item.name} ${fechaFormateada}: ${item.total} reportes${esCero ? ' (sin actividad)' : ''}`}
+                            />
+                            <div className={styles.barMeta}>
+                              <span className={styles.barLabel}>{item.name}</span>
+                              <span className={styles.barDate}>{fechaFormateada}</span>
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()
                   ) : (
                     <>
                       <span className={styles.bar} style={{ height: '45%' }} />
@@ -353,22 +401,10 @@ export default function AdminPage() {
                       <span className={styles.bar} style={{ height: '85%' }} />
                       <span className={styles.bar} style={{ height: '60%' }} />
                       <span className={styles.bar} style={{ height: '50%' }} />
+                      <span className={styles.bar} style={{ height: '40%' }} />
                     </>
                   )}
                 </div>
-                {/* Leyenda de días */}
-                {estadisticasData.dailyProcesses.length > 0 && (
-                  <div style={{ display: 'flex', gap: '16px', marginTop: '12px', fontSize: '0.78rem', color: '#6b5a45' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span style={{ width: '12px', height: '12px', borderRadius: '2px', background: 'linear-gradient(180deg, #c66c1e, #e8a854)', display: 'inline-block' }}></span>
-                      Con actividad
-                    </span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span style={{ width: '12px', height: '12px', borderRadius: '2px', background: 'linear-gradient(180deg, #ccc, #e0e0e0)', display: 'inline-block' }}></span>
-                      Sin actividad
-                    </span>
-                  </div>
-                )}
               </article>
 
               <article className={styles.advancedPanel}>

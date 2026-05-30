@@ -48,14 +48,15 @@ async function request(path) {
     cache: "no-store",
   });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Error ${response.status}: ${errorText}`);
-  }
-
-  // Si la respuesta es 204 No Content, retornar null
+  // Si la respuesta es 204 No Content, retornar null (sin error)
   if (response.status === 204) {
     return null;
+  }
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    // Lanzar error con más contexto para debugging
+    throw new Error(`Error ${response.status}: ${errorText || response.statusText}`);
   }
 
   return response.json();
